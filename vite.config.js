@@ -31,7 +31,7 @@ function copyGeneratedImages() {
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: './',
+  base: '/Emprendedurismo/',
   plugins: [react(), copyGeneratedImages()],
   server: {
     fs: {
