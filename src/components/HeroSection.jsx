@@ -73,7 +73,7 @@ export const HeroSection = ({ onOpenScanner, onNavigate }) => {
             {/* Hero Graphic Frame */}
             <div className="relative rounded-2xl overflow-hidden border border-[#DCE7E0] bg-[#F3F8F5] aspect-4/3 flex items-center justify-center">
               <img
-                src="/images/scanner_hero.png"
+                src="./images/scanner_hero.png"
                 alt="AI Plant Diagnostic Scanner"
                 className="w-full h-full object-cover"
               />
