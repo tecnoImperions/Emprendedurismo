@@ -28,7 +28,7 @@ export const HeroSection = ({ onOpenScanner, onNavigate }) => {
               className="w-full sm:w-auto px-7 py-3.5 rounded-full bg-[#2E6C45] text-white font-extrabold text-sm sm:text-base flex items-center justify-center gap-2.5 shadow-md hover:bg-[#255838] hover:shadow-lg transition-all"
             >
               <SparklesIcon size={18} className="text-[#5CCF8D]" />
-              <span>SCAN PLANT ✨</span>
+              <span>Escanear con Cámara IA ✨</span>
             </button>
 
             <button

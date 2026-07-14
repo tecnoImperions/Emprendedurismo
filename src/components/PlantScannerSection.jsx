@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { interactivePlants } from '../data/plantData';
-import { CameraIcon, SparklesIcon, LeafIcon, ThermometerIcon, DropletIcon, SunIcon, HeartPulseIcon, AlertTriangleIcon, RotateCwIcon, ShieldCheckIcon, ClockIcon } from './Icons';
+import { savePlantToUserGarden, getActiveUser } from '../data/userDatabase';
+import { CameraIcon, SparklesIcon, LeafIcon, ThermometerIcon, DropletIcon, SunIcon, HeartPulseIcon, AlertTriangleIcon, RotateCwIcon, ShieldCheckIcon, ClockIcon, CheckCircleIcon } from './Icons';
 
 export const PlantScannerSection = () => {
   const [selectedPlantId, setSelectedPlantId] = useState(interactivePlants[0].id);
@@ -8,6 +9,7 @@ export const PlantScannerSection = () => {
   const [activeViewMode, setActiveViewMode] = useState('general');
   const [activeDiagnosticIndex, setActiveDiagnosticIndex] = useState(0);
   const [isScanning, setIsScanning] = useState(false);
+  const [toastMsg, setToastMsg] = useState(null);
 
   const plant = interactivePlants.find((p) => p.id === selectedPlantId) || interactivePlants[0];
   const activeDiag = plant.diagnostics[activeDiagnosticIndex] || plant.diagnostics[0];
@@ -17,6 +19,13 @@ export const PlantScannerSection = () => {
     setTimeout(() => {
       setIsScanning(false);
     }, 900);
+  };
+
+  const handleAddToMyCollection = () => {
+    const user = getActiveUser();
+    savePlantToUserGarden(user.id, plant);
+    setToastMsg(`🌱 ¡${plant.name} añadida a la base de datos de ${user.name}!`);
+    setTimeout(() => setToastMsg(null), 3500);
   };
 
   return (
@@ -165,11 +174,20 @@ export const PlantScannerSection = () => {
 
               {/* SECONDARY OUTLINED PILL BUTTON ("ADD TO MY COLLECTION") */}
               <button
-                className="w-full sm:w-auto py-3.5 px-6 rounded-full border-2 border-[#2E6C45] text-[#2E6C45] font-bold text-xs sm:text-sm hover:bg-[#2E6C45] hover:text-white transition-all text-center"
+                onClick={handleAddToMyCollection}
+                className="w-full sm:w-auto py-3.5 px-6 rounded-full border-2 border-[#2E6C45] text-[#2E6C45] font-bold text-xs sm:text-sm hover:bg-[#2E6C45] hover:text-white transition-all text-center flex items-center justify-center gap-1.5"
               >
-                ADD TO MY COLLECTION
+                <CheckCircleIcon size={16} />
+                <span>ADD TO MY COLLECTION</span>
               </button>
             </div>
+
+            {toastMsg && (
+              <div className="mt-3 bg-[#2E6C45] text-white p-3 rounded-2xl shadow-md flex items-center gap-2 text-xs font-bold animate-fadeIn">
+                <CheckCircleIcon size={16} className="text-[#5CCF8D]" />
+                <span>{toastMsg}</span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -251,6 +269,22 @@ export const PlantScannerSection = () => {
                 <span className="text-xs text-[#526057] mt-0.5 block leading-relaxed">{activeDiag.solution}</span>
               </div>
             </div>
+
+            {/* Nutrients & Source Card (Pure White Surface) */}
+            {plant.nutrientsRequired && (
+              <div className="bg-[#EBF5EF] p-4 rounded-2xl border border-[#2E6C45] shadow-sm flex items-start gap-3">
+                <div className="w-9 h-9 rounded-xl bg-[#2E6C45] text-white flex items-center justify-center shrink-0">
+                  <SparklesIcon size={18} className="text-[#5CCF8D]" />
+                </div>
+                <div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-extrabold text-[#2E6C45] block">Nutrientes Requeridos ({plant.nutrientsRequired.npkFormula})</span>
+                  </div>
+                  <span className="text-xs text-[#1D1F1D] font-bold mt-0.5 block">🔬 Clave: {plant.nutrientsRequired.keyNutrient}</span>
+                  <span className="text-xs text-[#526057] mt-0.5 block leading-relaxed">📍 <strong>Dónde conseguir / Aplicar:</strong> {plant.nutrientsRequired.whereToFind}</span>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
