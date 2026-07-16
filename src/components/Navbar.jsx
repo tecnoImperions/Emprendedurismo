@@ -1,16 +1,26 @@
 import React from 'react';
-import { CameraIcon, SproutIcon, ThermometerIcon, UsersIcon, SparklesIcon, DatabaseIcon, LeafIcon, ClipboardIcon } from './Icons';
+import { CameraIcon, SproutIcon, ThermometerIcon, UsersIcon, SparklesIcon, DatabaseIcon, LeafIcon, ClipboardIcon, UserIcon, HomeIcon } from './Icons';
 
 export const Navbar = ({ activeModule, onSelectModule, onOpenScanner, onOpenAuthModal, currentUser, onLogout }) => {
-  // Módulos organizados en pestañas incluyendo Historial de Nube para clientes
+  const isAdmin = currentUser && (
+    currentUser.email === 'juanrevollo001@gmail.com' ||
+    currentUser.email === 'tecnoimperions@gmail.com' ||
+    currentUser.email?.includes('admin') ||
+    currentUser.role === 'admin'
+  );
+
   const modules = [
-    { id: 'home', label: 'Inicio', icon: <CameraIcon size={17} /> },
+    { id: 'home', label: 'Inicio', icon: <HomeIcon size={17} /> },
     { id: 'historial', label: 'Historial Nube', icon: <ClipboardIcon size={17} /> },
     { id: 'huertos', label: 'Mis Huertos', icon: <DatabaseIcon size={17} /> },
     { id: 'nutrientes', label: 'Nutrientes NPK', icon: <LeafIcon size={17} /> },
     { id: 'guias', label: 'Clima & Riego', icon: <ThermometerIcon size={17} /> },
     { id: 'precios', label: 'Planes VIP', icon: <SparklesIcon size={17} /> },
   ];
+
+  if (isAdmin) {
+    modules.push({ id: 'admin', label: 'Panel Admin', icon: <UsersIcon size={17} /> });
+  }
 
   const firstName = currentUser ? currentUser.name.split(' ')[0] : null;
 
@@ -79,7 +89,9 @@ export const Navbar = ({ activeModule, onSelectModule, onOpenScanner, onOpenAuth
                 className="px-4 py-2.5 rounded-2xl bg-[#EBF5EF] hover:bg-[#DCECE2] text-[#2E6C45] font-extrabold text-xs sm:text-sm flex items-center gap-2 border border-[#CDE5D5] shadow-xs transition-all active:scale-95"
                 title="Acceder o Crear mi perfil de huerto"
               >
-                <div className="w-5 h-5 rounded-full bg-[#2E6C45] text-white flex items-center justify-center text-[10px] font-bold">👤</div>
+                <div className="w-5 h-5 rounded-full bg-[#2E6C45] text-white flex items-center justify-center">
+                  <UserIcon size={12} />
+                </div>
                 <span>Mi Cuenta</span>
               </button>
             )}
@@ -112,7 +124,7 @@ export const Navbar = ({ activeModule, onSelectModule, onOpenScanner, onOpenAuth
             }`}
           >
             <div className={`p-1.5 rounded-xl ${activeModule === 'home' ? 'bg-[#EBF5EF]' : ''}`}>
-              <CameraIcon size={18} />
+              <HomeIcon size={18} />
             </div>
             <span className="text-[10px] tracking-tight mt-0.5 font-bold">Inicio</span>
           </button>
@@ -125,7 +137,7 @@ export const Navbar = ({ activeModule, onSelectModule, onOpenScanner, onOpenAuth
             }`}
           >
             <div className={`p-1.5 rounded-xl ${activeModule === 'historial' || activeModule === 'reporte' ? 'bg-[#EBF5EF]' : ''}`}>
-              <span className="text-base">📜</span>
+              <ClipboardIcon size={18} />
             </div>
             <span className="text-[10px] tracking-tight mt-0.5 font-bold">Historial</span>
           </button>

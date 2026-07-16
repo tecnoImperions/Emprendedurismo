@@ -1,10 +1,58 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { savePlantToUserGarden, getActiveUser } from '../data/userDatabase';
-import { SparklesIcon, SproutIcon, ThermometerIcon, LeafIcon, DropletIcon, CheckCircleIcon } from './Icons';
+import { SparklesIcon, SproutIcon, ThermometerIcon, LeafIcon, DropletIcon, CheckCircleIcon, UsersIcon } from './Icons';
 
 export const DiagnosticReportPage = ({ reportData, onNavigate, onScanAgain }) => {
   const [savedFeedback, setSavedFeedback] = useState(false);
+  const [providers, setProviders] = useState([]);
   const activeUser = getActiveUser();
+
+  useEffect(() => {
+    const loadProviders = () => {
+      const defaultList = [
+        {
+          id: 101,
+          name: 'Vivero El Clavel Verde',
+          location: 'Zona Metropolitana',
+          whatsapp: '+5215512345678',
+          specialty: 'Abonos NPK solubles, Humus de Lombriz y Tierras orgánicas preparadas.',
+          addressOrZone: 'Sector Central / Envíos a Domicilio'
+        },
+        {
+          id: 102,
+          name: 'Distribuidora AgroOrgánica',
+          location: 'Zona Norte',
+          whatsapp: '+573001234567',
+          specialty: 'Fertilizantes foliares ecológicos, Sustratos aireados y Compost de coco.',
+          addressOrZone: 'Calle 10 / Entregas en el día'
+        }
+      ];
+      try {
+        const saved = localStorage.getItem('FLORAMETRICS_REGISTERED_PROVIDERS');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            const approved = parsed.filter(p => p.isApproved);
+            return [...approved, ...defaultList];
+          }
+        }
+      } catch (err) {
+        console.error('Error al cargar proveedores en reporte:', err);
+      }
+      return defaultList;
+    };
+    
+    setProviders(loadProviders());
+  }, []);
+
+  const handleContactWhatsApp = (provider) => {
+    const cleanNum = provider.whatsapp.replace(/\+/g, '').replace(/\D/g, '');
+    const neededProduct = nutrientsRequired.npk || 'Humus / Fertilizante Orgánico';
+    const message = encodeURIComponent(
+      `Hola ${provider.name}, vi tu contacto en FloraMetrics AI tras escanear mi planta de ${plantName}. ¿Tienen en stock y hacen envíos de "${neededProduct}"? Me gustaría coordinar para pasarte mi ubicación.`
+    );
+    window.open(`https://api.whatsapp.com/send?phone=${cleanNum}&text=${message}`, '_blank');
+  };
 
   if (!reportData) {
     return (
@@ -18,6 +66,36 @@ export const DiagnosticReportPage = ({ reportData, onNavigate, onScanAgain }) =>
           >
             📸 Abrir Cámara Ahora
           </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Validación de objeto no botánico (rostros, objetos, etc.)
+  if (reportData.isPlantOrGarden === false) {
+    return (
+      <div className="max-w-xl mx-auto px-4 py-12 text-center animate-fadeIn">
+        <div className="bg-white border border-red-200 rounded-3xl p-8 shadow-lg space-y-5">
+          <div className="w-16 h-16 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center text-3xl mx-auto">
+            ⚠️
+          </div>
+          <div>
+            <h3 className="text-xl font-extrabold text-[#1D1F1D] mb-2 font-['Plus_Jakarta_Sans']">Objeto No Identificado como Planta</h3>
+            <p className="text-xs text-[#526057] leading-relaxed">
+              El motor analítico de FloraMetrics AI detectó que la imagen escaneada no contiene una planta, hoja, tallo o cultivo.
+            </p>
+          </div>
+          <div className="p-4 rounded-xl bg-red-50/50 border border-red-100 text-xs text-red-700 text-left leading-relaxed">
+            <strong>Detalle del sistema:</strong> {reportData.title || 'Muestra de imagen no botánica.'} {reportData.solution}
+          </div>
+          <div className="pt-2">
+            <button
+              onClick={onScanAgain}
+              className="px-6 py-3.5 rounded-2xl bg-[#2E6C45] hover:bg-[#205031] text-white font-extrabold text-xs transition-all active:scale-95 shadow-md w-full"
+            >
+              📸 Volver a Escanear Planta Real
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -227,6 +305,52 @@ export const DiagnosticReportPage = ({ reportData, onNavigate, onScanAgain }) =>
             </p>
           </div>
 
+        </div>
+      </div>
+
+      {/* SECCIÓN DIRECTA DE PROVEEDORES LOCALES (SIN VUELTAS) */}
+      <div className="bg-[#FFFFFF] border border-[#DCE7E0] rounded-3xl p-6 sm:p-8 shadow-md mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+          <div>
+            <h3 className="text-base sm:text-lg font-extrabold text-[#1D1F1D] flex items-center gap-2">
+              <UsersIcon size={20} className="text-[#2E6C45]" />
+              <span>Comprar Solución Directo por WhatsApp (Proveedores Verificados)</span>
+            </h3>
+            <p className="text-xs text-[#526057]">
+              Adquiere el abono o sustrato directamente con distribuidores locales autorizados. Chatea, comparte tu ubicación y coordina la entrega.
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {providers.map((p) => (
+            <div key={p.id} className="p-5 rounded-2xl bg-[#F9FBF9] border border-[#E1EAE4] flex flex-col justify-between hover:shadow-sm transition-all">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-extrabold text-[#1D1F1D]">{p.name}</h4>
+                  <span className="px-2.5 py-0.5 rounded-full bg-[#EBF5EF] text-[#2E6C45] text-[10px] font-extrabold border border-[#CDE5D5]">
+                    {p.location}
+                  </span>
+                </div>
+                <p className="text-xs text-[#526057] mt-1">
+                  <strong>📍 Zona:</strong> {p.addressOrZone || 'Envíos locales'}
+                </p>
+                <p className="text-xs text-[#526057] line-clamp-2">
+                  <strong>📦 Especialidad:</strong> {p.specialty || 'General'}
+                </p>
+              </div>
+              
+              <button
+                onClick={() => handleContactWhatsApp(p)}
+                className="mt-4 w-full py-3 rounded-xl bg-[#2E6C45] hover:bg-[#205031] text-white font-extrabold text-xs flex items-center justify-center gap-2 transition-all active:scale-95 shadow-sm"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-white">
+                  <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+                </svg>
+                <span>Chatear y Pedir por WhatsApp</span>
+              </button>
+            </div>
+          ))}
         </div>
       </div>
 

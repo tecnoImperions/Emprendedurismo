@@ -13,6 +13,7 @@ function copyGeneratedImages() {
       if (!fs.existsSync(targetDir)) {
         fs.mkdirSync(targetDir, { recursive: true })
       }
+      // Copiar imágenes del mockup
       const filesMap = {
         'plant_ai_scanner_hero_1783968093740.png': 'scanner_hero.png',
         'urban_vegetable_garden_1783968107568.png': 'urban_garden.png',
@@ -24,6 +25,13 @@ function copyGeneratedImages() {
         if (fs.existsSync(srcPath)) {
           fs.copyFileSync(srcPath, destPath)
         }
+      }
+
+      // Copiar el nuevo emblema / logotipo a la carpeta public como favicon
+      const logoSrc = 'C:/Users/Juan Andres/.gemini/antigravity/brain/8fc128e0-5f12-441e-b4ca-dd00bdc2ffcc/florametrics_logo_icon_1784205616893.png'
+      const logoDest = path.resolve(__dirname, 'public/favicon.png')
+      if (fs.existsSync(logoSrc)) {
+        fs.copyFileSync(logoSrc, logoDest)
       }
     }
   }

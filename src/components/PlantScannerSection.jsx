@@ -23,6 +23,11 @@ export const PlantScannerSection = () => {
 
   const handleAddToMyCollection = () => {
     const user = getActiveUser();
+    if (!user) {
+      setToastMsg(`⚠️ Inicia sesión para guardar plantas en tu colección`);
+      setTimeout(() => setToastMsg(null), 3500);
+      return;
+    }
     savePlantToUserGarden(user.id, plant);
     setToastMsg(`🌱 ¡${plant.name} añadida a la base de datos de ${user.name}!`);
     setTimeout(() => setToastMsg(null), 3500);

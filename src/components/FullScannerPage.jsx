@@ -120,33 +120,41 @@ export const FullScannerPage = ({ onScanComplete, onCancel }) => {
   // Análisis con Gemini API oficial (gemini-1.5-flash) y fallback inteligente
   const runGeminiAnalysis = async (base64Img) => {
     try {
-      const centralKey = ['AQ', '.Ab8RN6J', 'oxs6yw_boPI', '-_bPJlW-NTme', '44BI4r_70f6E', 'op-WHaAQ'].join('');
-      const activeKey = localStorage.getItem('FLORAMETRICS_GEMINI_KEY') || import.meta.env.VITE_GEMINI_API_KEY || centralKey;
+      const centralKey = 'AQ.Ab8RN6LIHaEgEH9kWlImo1Tm--h601vziRSEtNXvz3J-hdNhjg';
+      const blockedKey = 'AQ.Ab8RN6Joxs6yw_boPI-_bPJlW-NTme44BI4r_70f6Eop-WHaAQ';
+      let localKey = localStorage.getItem('FLORAMETRICS_GEMINI_KEY');
+      if (localKey === blockedKey) {
+        localStorage.removeItem('FLORAMETRICS_GEMINI_KEY');
+        localKey = null;
+      }
+      const activeKey = localKey || import.meta.env.VITE_GEMINI_API_KEY || centralKey;
       const cleanBase64 = base64Img.replace(/^data:image\/(png|jpeg|jpg|webp);base64,/, '');
 
-      const prompt = `Actúa como especialista botánico institucional y agrónomo de huertos urbanos FloraMetrics. Analiza la imagen y devuelve ÚNICAMENTE un JSON exacto sin texto adicional exterior:
+      const prompt = `Actúa como especialista botánico institucional y agrónomo de huertos urbanos FloraMetrics. Analiza la imagen. Si la imagen NO contiene una planta, árbol, flor, huerto, cultivo o fruto (por ejemplo, si es una persona, un rostro/selfie, un animal, una habitación vacía o un objeto no botánico), debes establecer el campo obligatorio "isPlantOrGarden" en false.
+      Devuelve ÚNICAMENTE un JSON exacto sin texto adicional exterior:
       {
-        "name": "Nombre común popular de la planta u hortaliza (ej. Tomate Cherry, Albahaca, Monstera)",
-        "scientificName": "Nombre científico botánico en latín",
-        "healthScore": número entero entre 0 y 100 indicando su vitalidad actual,
-        "title": "Diagnóstico corto de estado en 1 frase (ej. Follaje verde vigoroso en etapa de floración)",
-        "solution": "Recomendación o acción directa y sencilla para el hogar (ej. Añadir compost alrededor del tallo y regar por la mañana)",
+        "isPlantOrGarden": boolean (true si es planta/cultivo/fruto, false de lo contrario),
+        "name": "Nombre común de la planta si isPlantOrGarden es true, o 'Objeto no identificado' si es false",
+        "scientificName": "Nombre científico en latín si es true, o 'No botánico' si es false",
+        "healthScore": número entero entre 0 y 100 indicando su vitalidad actual (0 si es false),
+        "title": "Diagnóstico de estado en 1 frase (si es false, explica qué objeto parece ser en lugar de una planta)",
+        "solution": "Recomendación o acción directa (si es false, pide amigablemente al usuario enfocar una planta real)",
         "nutrientsRequired": {
-          "npk": "Qué nutriente o balance necesita más (Nitrógeno N, Potasio K o Calcio)",
-          "homemadeSource": "Receta casera orgánica exacta (ej. Té de cáscara de plátano hervido o cáscara de huevo triturada)",
-          "commercialSource": "Qué abono pedir en el vivero local (ej. Abono orgánico soluble NPK 10-10-10 o humus de lombriz)"
+          "npk": "Nutriente requerido (vacío si es false)",
+          "homemadeSource": "Receta casera (vacío si es false)",
+          "commercialSource": "Abono de vivero (vacío si es false)"
         },
         "care": {
-          "light": "Requerimiento exacto de horas y tipo de luz solar",
-          "water": "Frecuencia o método de riego exacto sin mojar hojas",
-          "soil": "Tipo de sustrato ideal y drenaje",
-          "fertilizer": "Frecuencia de fertilización o abono en época cálida"
+          "light": "Horas de luz solar (vacío si es false)",
+          "water": "Frecuencia de riego (vacío si es false)",
+          "soil": "Sustrato ideal (vacío si es false)",
+          "fertilizer": "Frecuencia de abono (vacío si es false)"
         },
         "climate": {
-          "temperature": "Rango ideal de temperatura en °C",
-          "waterFreq": "Frecuencia semanal o diaria de riego"
+          "temperature": "Rango ideal de temperatura (vacío si es false)",
+          "waterFreq": "Frecuencia de riego (vacío si es false)"
         },
-        "lifeSpanYears": "Tiempo o proyección estimado de vida (ej. 15+ Años o Ciclo anual)"
+        "lifeSpanYears": "Tiempo estimado de vida (vacío si es false)"
       }`;
 
       const response = await fetch(
@@ -203,40 +211,18 @@ export const FullScannerPage = ({ onScanComplete, onCancel }) => {
       lifeSpanYears: "Planta perenne o ciclo agrícola completo con excelente longevidad en casa"
     };
   };
-
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 animate-fadeIn">
+    <div className="fixed inset-0 z-50 bg-[#1D1F1D] text-white font-['Plus_Jakarta_Sans'] flex flex-col justify-between overflow-hidden">
+      <style>{`
+        @keyframes scanSweep {
+          0% { top: 4%; }
+          50% { top: 96%; }
+          100% { top: 4%; }
+        }
+      `}</style>
       
-      {/* Encabezado del Escáner Directo (Estilo QR) */}
-      <div className="bg-[#FFFFFF] border border-[#DCE7E0] rounded-3xl p-5 sm:p-6 shadow-md mb-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="flex items-center gap-3.5">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#2E6C45] to-[#40915E] text-white flex items-center justify-center shadow-md">
-            <CameraIcon size={24} className="animate-pulse" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-xl sm:text-2xl font-extrabold text-[#1D1F1D] font-['Plus_Jakarta_Sans']">Escáner Botánico en Vivo</h2>
-              <span className="px-2.5 py-0.5 rounded-full bg-[#EBF5EF] text-[#2E6C45] text-[10px] font-extrabold border border-[#CDE5D5]">
-                Estilo QR Directo
-              </span>
-            </div>
-            <p className="text-xs sm:text-sm text-[#526057]">
-              Apunta directo a la hoja o tallo como al leer un código de barras. Subida en tiempo real a Cloudinary.
-            </p>
-          </div>
-        </div>
-
-        <button
-          onClick={onCancel}
-          className="px-5 py-2.5 rounded-2xl bg-[#F3F8F5] hover:bg-[#E4ECE7] text-[#526057] hover:text-[#1D1F1D] font-extrabold text-xs transition-all shrink-0"
-        >
-          ✕ Volver a Inicio
-        </button>
-      </div>
-
-      {/* VISOR PRINCIPAL DE CÁMARA (ESTILO LECTOR QR CON RECUADRO CENTRAL) */}
-      <div className="relative bg-[#1D1F1D] rounded-3xl overflow-hidden shadow-2xl border-2 border-[#2E6C45]/60 aspect-4/3 sm:aspect-16/9 flex items-center justify-center">
-        
+      {/* 1. Video o Vista previa en pantalla completa de fondo */}
+      <div className="absolute inset-0 z-0">
         {capturedPreview ? (
           <img src={capturedPreview} alt="Muestra capturada" className="w-full h-full object-cover" />
         ) : (
@@ -248,99 +234,116 @@ export const FullScannerPage = ({ onScanComplete, onCancel }) => {
             className={`w-full h-full object-cover ${!isCameraActive ? 'hidden' : ''}`}
           />
         )}
-
-        {/* Recuadro QR Central de Enfoque */}
-        {scanStatus === 'idle' && isCameraActive && !capturedPreview && (
-          <div className="absolute inset-0 pointer-events-none flex items-center justify-center p-8">
-            <div className="w-64 sm:w-80 h-64 sm:h-80 border-4 border-dashed border-[#5CCF8D]/80 rounded-3xl relative flex flex-col items-center justify-between p-4 bg-black/10">
-              <div className="flex justify-between w-full">
-                <div className="w-6 h-6 border-t-4 border-l-4 border-[#5CCF8D] rounded-tl-xl" />
-                <div className="w-6 h-6 border-t-4 border-r-4 border-[#5CCF8D] rounded-tr-xl" />
-              </div>
-              <div className="text-center bg-black/60 backdrop-blur-md px-3 py-1 rounded-full border border-white/20">
-                <span className="text-[11px] font-extrabold text-white tracking-wide uppercase">Enfoque Botánico Central</span>
-              </div>
-              <div className="flex justify-between w-full">
-                <div className="w-6 h-6 border-b-4 border-l-4 border-[#5CCF8D] rounded-bl-xl" />
-                <div className="w-6 h-6 border-b-4 border-r-4 border-[#5CCF8D] rounded-br-xl" />
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Overlay cuando está subiendo o analizando */}
-        {scanStatus !== 'idle' && (
-          <div className="absolute inset-0 bg-[#1D1F1D]/85 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center space-y-4 animate-fadeIn z-20">
-            <div className="w-16 h-16 rounded-3xl bg-[#2E6C45] text-[#5CCF8D] flex items-center justify-center shadow-xl animate-bounce">
-              {scanStatus === 'uploading_cloudinary' ? <CameraIcon size={32} /> : <SparklesIcon size={32} />}
-            </div>
-            <h3 className="text-xl font-extrabold text-white">{statusMsg}</h3>
-            <div className="w-48 h-2 bg-white/20 rounded-full overflow-hidden">
-              <div className="h-full bg-gradient-to-r from-[#5CCF8D] to-[#2E6C45] animate-pulse w-full" />
-            </div>
-            <p className="text-xs text-white/70">
-              Respaldo en nube <strong>Cloudinary: ll3h5fkl</strong> & IA de grado institucional FloraMetrics.
-            </p>
-          </div>
-        )}
-
-        {/* Canvas oculto para capturas */}
-        <canvas ref={canvasRef} className="hidden" />
+        {/* Fondo oscuro traslúcido para destacar el visor */}
+        <div className="absolute inset-0 bg-black/40 z-10" />
       </div>
 
-      {/* BARRA DE CONTROLES INFERIOR (BOTÓN GRANDE DE CAPTURA + SUBIR GALERÍA) */}
-      <div className="mt-6 bg-[#FFFFFF] border border-[#DCE7E0] rounded-3xl p-5 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+      {/* 2. Cabecera (Header flotante estilo Mercado Pago) */}
+      <header className="relative z-20 bg-gradient-to-b from-black/80 to-transparent p-4 flex items-center justify-between h-16">
+        <button
+          onClick={onCancel}
+          className="w-10 h-10 rounded-full bg-black/40 hover:bg-black/60 flex items-center justify-center text-white transition-all active:scale-90"
+        >
+          <span className="text-xl">❮</span>
+        </button>
+        <span className="text-sm font-extrabold tracking-wide uppercase">Escanear Planta</span>
+        <button
+          onClick={onCancel}
+          className="w-10 h-10 rounded-full bg-black/40 hover:bg-black/60 flex items-center justify-center text-white transition-all active:scale-90"
+        >
+          <span className="text-lg">✕</span>
+        </button>
+      </header>
+
+      {/* 3. Zona Central del Visor */}
+      <main className="relative z-20 flex-1 flex flex-col items-center justify-center p-4">
         
-        <div className="text-center sm:text-left">
-          <p className="text-xs sm:text-sm font-extrabold text-[#1D1F1D] flex items-center justify-center sm:justify-start gap-1.5">
-            <CheckCircleIcon size={16} className="text-[#2E6C45]" />
-            <span>{statusMsg}</span>
+        {scanStatus === 'idle' && (
+          <p className="text-center text-xs sm:text-sm font-bold text-white/95 mb-6 max-w-xs drop-shadow-md">
+            Enfoca las hojas de tu planta dentro del recuadro
           </p>
-          <p className="text-[11px] text-[#526057]">
-            ¿Cámara trasera sin foco? También puedes elegir una foto nítida de tu galería o carrete.
-          </p>
-        </div>
+        )}
 
-        <div className="flex flex-wrap items-center justify-center gap-3 w-full sm:w-auto">
-          
-          {/* Botón Primario de Captura Directa */}
-          {scanStatus === 'idle' && isCameraActive && !capturedPreview && (
-            <button
-              onClick={handleCapturePhoto}
-              className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-[#2E6C45] hover:bg-[#255838] text-white font-extrabold text-sm sm:text-base shadow-lg hover:shadow-xl flex items-center justify-center gap-2.5 transition-all active:scale-95"
-            >
-              <CameraIcon size={20} className="text-[#5CCF8D]" />
-              <span>📸 CAPTURAR AHORA</span>
-            </button>
-          )}
+        {/* Recuadro de Enfoque con Bordes Verdes y Animación Láser */}
+        {scanStatus === 'idle' && (
+          <div className="w-64 h-64 sm:w-80 sm:h-80 border-4 border-dashed border-[#5CCF8D]/80 rounded-[2.5rem] relative flex items-center justify-center bg-black/20 overflow-hidden shadow-2xl">
+            {/* Esquinas de enfoque */}
+            <div className="absolute top-0 left-0 w-6 h-6 border-t-4 border-l-4 border-[#5CCF8D] rounded-tl-[1.5rem]" />
+            <div className="absolute top-0 right-0 w-6 h-6 border-t-4 border-r-4 border-[#5CCF8D] rounded-tr-[1.5rem]" />
+            <div className="absolute bottom-0 left-0 w-6 h-6 border-b-4 border-l-4 border-[#5CCF8D] rounded-bl-[1.5rem]" />
+            <div className="absolute bottom-0 right-0 w-6 h-6 border-b-4 border-r-4 border-[#5CCF8D] rounded-br-[1.5rem]" />
 
-          {/* Si se detuvo o desea reintentar */}
-          {(!isCameraActive || capturedPreview) && scanStatus === 'idle' && (
-            <button
-              onClick={() => {
-                setCapturedPreview(null);
-                startCamera();
+            {/* Línea láser de barrido */}
+            <div 
+              className="absolute left-0 right-0 h-0.5 bg-[#5CCF8D] shadow-[0_0_10px_2px_#5CCF8D] pointer-events-none" 
+              style={{
+                animation: 'scanSweep 2.8s ease-in-out infinite',
+                top: '4%'
               }}
-              className="px-6 py-3.5 rounded-2xl bg-[#2E6C45] text-white font-extrabold text-xs sm:text-sm shadow-md hover:bg-[#255838] transition-all flex items-center gap-2"
-            >
-              🔄 Volver a Activar Cámara
-            </button>
-          )}
+            />
+          </div>
+        )}
 
-          {/* Botón Secundario de Subida por Archivo / Galería */}
-          <label className="w-full sm:w-auto px-6 py-3.5 rounded-2xl border-2 border-[#2E6C45] bg-[#FFFFFF] hover:bg-[#EBF5EF] text-[#2E6C45] font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 cursor-pointer shadow-sm transition-all active:scale-95">
-            <span className="text-lg">📁</span>
-            <span>Subir de Galería</span>
+        {/* Estado del escaneo (Carga e IA) */}
+        {scanStatus !== 'idle' && (
+          <div className="bg-black/75 backdrop-blur-md p-6 rounded-3xl border border-white/10 max-w-sm text-center space-y-4 shadow-2xl animate-fadeIn">
+            <div className="w-14 h-14 rounded-2xl bg-[#2E6C45] text-[#5CCF8D] flex items-center justify-center shadow-xl animate-bounce mx-auto">
+              {scanStatus === 'uploading_cloudinary' ? <CameraIcon size={28} /> : <SparklesIcon size={28} />}
+            </div>
+            <h4 className="text-sm font-extrabold">{statusMsg}</h4>
+            <div className="w-36 h-1.5 bg-white/20 rounded-full overflow-hidden mx-auto">
+              <div className="h-full bg-gradient-to-r from-[#5CCF8D] to-[#2E6C45] animate-pulse w-full" />
+            </div>
+            <p className="text-[10px] text-white/50">Procesando diagnóstico oficial...</p>
+          </div>
+        )}
+      </main>
+
+      {/* 4. Barra Inferior de Controles */}
+      <footer className="relative z-20 bg-gradient-to-t from-black/90 to-transparent px-6 pb-8 pt-4 flex flex-col items-center gap-5 w-full">
+        
+        {/* Botón Disparador Central (Gatillo de la Cámara) */}
+        {scanStatus === 'idle' && isCameraActive && !capturedPreview && (
+          <button
+            onClick={handleCapturePhoto}
+            aria-label="Capturar foto de la planta"
+            className="w-16 h-16 rounded-full bg-white p-1 hover:scale-105 active:scale-95 transition-all shadow-2xl flex items-center justify-center"
+          >
+            <div className="w-full h-full rounded-full border-4 border-black/80 bg-[#2E6C45] flex items-center justify-center text-white">
+              <CameraIcon size={24} />
+            </div>
+          </button>
+        )}
+
+        {/* Si se detuvo o desea reintentar */}
+        {(!isCameraActive || capturedPreview) && scanStatus === 'idle' && (
+          <button
+            onClick={() => {
+              setCapturedPreview(null);
+              startCamera();
+            }}
+            className="px-6 py-3.5 rounded-2xl bg-[#2E6C45] hover:bg-[#205031] text-white font-extrabold text-xs sm:text-sm shadow-md transition-all flex items-center gap-2"
+          >
+            🔄 Reintentar / Activar Cámara
+          </button>
+        )}
+
+        {/* Botón Galería (Estilo Mercado Pago naranja pero en verde FloraMetrics) */}
+        {scanStatus === 'idle' && (
+          <label className="w-full max-w-xs py-3.5 rounded-2xl bg-[#2E6C45] hover:bg-[#205031] text-white font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-95 shadow-md text-center border border-[#CDE5D5]/20">
+            <span>Elegir Foto de Galería</span>
             <input
               type="file"
               accept="image/*"
-              onChange={handleFileUpload}
               className="hidden"
+              onChange={handleFileUpload}
             />
           </label>
-        </div>
-      </div>
+        )}
+      </footer>
 
+      {/* Canvas oculto para capturas */}
+      <canvas ref={canvasRef} className="hidden" />
     </div>
   );
 };

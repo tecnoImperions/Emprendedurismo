@@ -211,6 +211,11 @@ export const ScannerModal = ({ isOpen, onClose }) => {
 
   const handleAddToGarden = () => {
     const user = getActiveUser();
+    if (!user) {
+      setToastMsg(`⚠️ Inicia sesión para guardar plantas en tu colección`);
+      setTimeout(() => setToastMsg(null), 3500);
+      return;
+    }
     const currentObj = customDiagnosis || selectedPlant;
     if (customDiagnosis?.isPlantOrGarden === false) return;
 

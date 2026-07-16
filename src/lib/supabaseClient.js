@@ -6,28 +6,35 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://gsqccwowatnxcg
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_fyKYdZ9zL-J_wHiYIZkdJw_Mwt07RH8';
 
 let supabaseInstance = null;
+let initPromise = null;
 
 // Inicializador asíncrono que evita el error de vite:import-analysis al no exponer literales estáticos
 export const getSupabase = async () => {
   if (supabaseInstance) return supabaseInstance;
-  try {
-    let mod;
+  if (initPromise) return initPromise;
+
+  initPromise = (async () => {
     try {
-      // 1. Carga prioritaria e inmediata vía CDN universal en el navegador sin necesitar npm install
-      const cdnUrl = 'https://esm.sh/@supabase/supabase-js@2';
-      mod = await import(/* @vite-ignore */ cdnUrl);
-    } catch (e) {
-      // 2. Si hay error de red en CDN y el paquete local existe en node_modules, lo cargamos dinámicamente mediante variable
-      const localPkg = '@supabase/' + 'supabase-js';
-      mod = await import(/* @vite-ignore */ localPkg);
+      let mod;
+      try {
+        // 1. Carga prioritaria e inmediata vía CDN universal en el navegador sin necesitar npm install
+        const cdnUrl = 'https://esm.sh/@supabase/supabase-js@2';
+        mod = await import(/* @vite-ignore */ cdnUrl);
+      } catch (e) {
+        // 2. Si hay error de red en CDN y el paquete local existe en node_modules, lo cargamos dinámicamente mediante variable
+        const localPkg = '@supabase/' + 'supabase-js';
+        mod = await import(/* @vite-ignore */ localPkg);
+      }
+      if (mod && mod.createClient) {
+        supabaseInstance = mod.createClient(supabaseUrl, supabaseAnonKey);
+      }
+    } catch (err) {
+      console.warn('⚠️ No se pudo inicializar el cliente Supabase:', err.message);
     }
-    if (mod && mod.createClient) {
-      supabaseInstance = mod.createClient(supabaseUrl, supabaseAnonKey);
-    }
-  } catch (err) {
-    console.warn('⚠️ No se pudo inicializar el cliente Supabase:', err.message);
-  }
-  return supabaseInstance;
+    return supabaseInstance;
+  })();
+
+  return initPromise;
 };
 
 // Export proxy para que App.jsx y AuthModal.jsx accedan a supabase.auth y base de datos sin errores ni bloqueos

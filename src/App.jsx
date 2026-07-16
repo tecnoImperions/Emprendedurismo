@@ -13,6 +13,7 @@ import { HistorySection } from './components/HistorySection';
 import { PricingSection } from './components/PricingSection';
 import { Footer } from './components/Footer';
 import { AuthModal } from './components/AuthModal';
+import { AdminSection } from './components/AdminSection';
 import { getActiveUser, saveActiveUser } from './data/userDatabase';
 import { supabase } from './lib/supabaseClient';
 import './App.css';
@@ -106,6 +107,10 @@ function App() {
     }
     if (target === 'reporte' && selectedReport) {
       setActiveModule('reporte');
+      return;
+    }
+    if (target === 'admin') {
+      setActiveModule('admin');
       return;
     }
     setActiveModule('home');
@@ -233,6 +238,13 @@ function App() {
                 onOpenAuthModal={() => setIsAuthModalOpen(true)}
                 onSelectModule={handleSelectModule}
               />
+            </div>
+          )}
+
+          {/* MÓDULO 9: PANEL DE ADMINISTRACIÓN (Gestión de Distribuidores) */}
+          {activeModule === 'admin' && (
+            <div className="animate-fadeIn pt-4">
+              <AdminSection />
             </div>
           )}
 

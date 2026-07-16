@@ -307,7 +307,7 @@ export const getActiveUser = () => {
   } catch (e) {
     console.error('Error al obtener usuario activo:', e);
   }
-  return mockupUsers[0]; // Por defecto Laura Gómez (Balcón Soleado)
+  return null;
 };
 
 export const setActiveUserId = (userId) => {

@@ -10,9 +10,17 @@ export const UserDashboardSection = ({ onOpenScanner }) => {
 
   useEffect(() => {
     const user = getActiveUser();
-    setActiveUser(user);
-    if (user.myGarden && user.myGarden.length > 0) {
-      setSelectedPlantDetails(user.myGarden[0]);
+    if (user) {
+      setActiveUser(user);
+      if (user.myGarden && user.myGarden.length > 0) {
+        setSelectedPlantDetails(user.myGarden[0]);
+      }
+    } else {
+      // Fallback para visualización del mockup si no hay sesión
+      setActiveUser(mockupUsers[0]);
+      if (mockupUsers[0].myGarden && mockupUsers[0].myGarden.length > 0) {
+        setSelectedPlantDetails(mockupUsers[0].myGarden[0]);
+      }
     }
   }, []);
 
