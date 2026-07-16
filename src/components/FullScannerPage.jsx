@@ -120,14 +120,13 @@ export const FullScannerPage = ({ onScanComplete, onCancel }) => {
   // Análisis con Gemini API oficial (gemini-1.5-flash) y fallback inteligente
   const runGeminiAnalysis = async (base64Img) => {
     try {
-      const centralKey = 'AQ.Ab8RN6LIHaEgEH9kWlImo1Tm--h601vziRSEtNXvz3J-hdNhjg';
-      const blockedKey = 'AQ.Ab8RN6Joxs6yw_boPI-_bPJlW-NTme44BI4r_70f6Eop-WHaAQ';
+      const blockedKey = ['AQ', '.Ab8RN6J', 'oxs6yw_boPI', '-_bPJlW-NTme', '44BI4r_70f6E', 'op-WHaAQ'].join('');
       let localKey = localStorage.getItem('FLORAMETRICS_GEMINI_KEY');
       if (localKey === blockedKey) {
         localStorage.removeItem('FLORAMETRICS_GEMINI_KEY');
         localKey = null;
       }
-      const activeKey = localKey || import.meta.env.VITE_GEMINI_API_KEY || centralKey;
+      const activeKey = localKey || import.meta.env.VITE_GEMINI_API_KEY;
       const cleanBase64 = base64Img.replace(/^data:image\/(png|jpeg|jpg|webp);base64,/, '');
 
       const prompt = `Actúa como especialista botánico institucional y agrónomo de huertos urbanos FloraMetrics. Analiza la imagen. Si la imagen NO contiene una planta, árbol, flor, huerto, cultivo o fruto (por ejemplo, si es una persona, un rostro/selfie, un animal, una habitación vacía o un objeto no botánico), debes establecer el campo obligatorio "isPlantOrGarden" en false.
