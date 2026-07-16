@@ -8,7 +8,7 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "deploy": "vite build && echo 'Ejecuta: git add dist -f && git commit -m temp && git subtree push --prefix dist origin gh-pages && git reset --soft HEAD~1'"
+    "deploy": "vite build && cd dist && git init && git checkout -b gh-pages && git add . && git commit -m \"Deploy\" && git push https://github.com/tecnoImperions/Emprendedurismo.git gh-pages --force && cd .."
   },
   "dependencies": {
     "react": "^19.2.7",
