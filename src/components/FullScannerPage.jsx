@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { uploadImageToCloudinary } from '../lib/cloudinaryClient';
 import { saveScanToHistory } from '../data/historyDatabase';
 import { SparklesIcon, CameraIcon, CheckCircleIcon, LeafIcon } from './Icons';
@@ -126,7 +127,11 @@ export const FullScannerPage = ({ onScanComplete, onCancel }) => {
         localStorage.removeItem('FLORAMETRICS_GEMINI_KEY');
         localKey = null;
       }
-      const activeKey = localKey || import.meta.env.VITE_GEMINI_API_KEY;
+      let activeKey = localKey || import.meta.env.VITE_GEMINI_API_KEY;
+      if (activeKey === blockedKey) {
+        activeKey = import.meta.env.VITE_GEMINI_API_KEY;
+      }
+
       const cleanBase64 = base64Img.replace(/^data:image\/(png|jpeg|jpg|webp);base64,/, '');
 
       const prompt = `Actúa como especialista botánico institucional y agrónomo de huertos urbanos FloraMetrics. Analiza la imagen. Si la imagen NO contiene una planta, árbol, flor, huerto, cultivo o fruto (por ejemplo, si es una persona, un rostro/selfie, un animal, una habitación vacía o un objeto no botánico), debes establecer el campo obligatorio "isPlantOrGarden" en false.
@@ -138,6 +143,10 @@ export const FullScannerPage = ({ onScanComplete, onCancel }) => {
         "healthScore": número entero entre 0 y 100 indicando su vitalidad actual (0 si es false),
         "title": "Diagnóstico de estado en 1 frase (si es false, explica qué objeto parece ser en lugar de una planta)",
         "solution": "Recomendación o acción directa (si es false, pide amigablemente al usuario enfocar una planta real)",
+        "description": "Una breve descripción de la especie detectada y su rol en el huerto o decoración del hogar en 1 o 2 oraciones.",
+        "toxicity": "Información sobre toxicidad para mascotas (perros/gatos), ej. 'No tóxica para mascotas' o 'Tóxica para gatos si se ingiere'",
+        "propagation": "Método recomendado de propagación (ej. 'Por esquejes de tallo en agua' o 'Mediante semillas en primavera')",
+        "trivia": "Un dato curioso, histórico o botánico interesante sobre esta planta en el huerto urbano",
         "nutrientsRequired": {
           "npk": "Nutriente requerido (vacío si es false)",
           "homemadeSource": "Receta casera (vacío si es false)",
@@ -156,59 +165,92 @@ export const FullScannerPage = ({ onScanComplete, onCancel }) => {
         "lifeSpanYears": "Tiempo estimado de vida (vacío si es false)"
       }`;
 
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${activeKey}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [
-              {
-                parts: [
-                  { text: prompt },
-                  { inline_data: { mime_type: 'image/jpeg', data: cleanBase64 } }
-                ]
-              }
-            ]
-          })
-        }
-      );
+      const genAI = new GoogleGenerativeAI(activeKey);
+      let model = genAI.getGenerativeModel({ model: 'gemini-3.5-flash' });
+      let responseText = '';
 
-      if (response.ok) {
-        const data = await response.json();
-        const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-        const match = rawText.match(/\{[\s\S]*\}/);
-        const jsonStr = match ? match[0] : rawText.replace(/```json/g, '').replace(/```/g, '').trim();
-        return JSON.parse(jsonStr);
+      try {
+        const result = await model.generateContent([
+          prompt,
+          {
+            inlineData: {
+              data: cleanBase64,
+              mimeType: 'image/jpeg'
+            }
+          }
+        ]);
+        const response = await result.response;
+        responseText = response.text();
+      } catch (flashError) {
+        console.warn('⚠️ Falló gemini-3.5-flash en FullScannerPage, intentando con gemini-flash-latest...', flashError);
+        model = genAI.getGenerativeModel({ model: 'gemini-flash-latest' });
+        try {
+          const result = await model.generateContent([
+            prompt,
+            {
+              inlineData: {
+                data: cleanBase64,
+                mimeType: 'image/jpeg'
+              }
+            }
+          ]);
+          const response = await result.response;
+          responseText = response.text();
+        } catch (proError) {
+          console.warn('⚠️ Falló gemini-flash-latest en FullScannerPage, intentando con gemini-2.5-flash...', proError);
+          model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+          const result = await model.generateContent([
+            prompt,
+            {
+              inlineData: {
+                data: cleanBase64,
+                mimeType: 'image/jpeg'
+              }
+            }
+          ]);
+          const response = await result.response;
+          responseText = response.text();
+        }
       }
+
+      const match = responseText.match(/\{[\s\S]*\}/);
+      const jsonStr = match ? match[0] : responseText.replace(/```json/g, '').replace(/```/g, '').trim();
+      const parsedData = JSON.parse(jsonStr);
+      parsedData.isSimulated = false;
+      return parsedData;
     } catch (e) {
       console.warn('⚠️ Fallo en red de Gemini Vision. Usando motor botánico local de alta precisión:', e);
+      // Fallback botánico confiable
+      return {
+        isPlantOrGarden: true,
+        isSimulated: true,
+        name: "Huerto u Hogar (Planta Escaneada en Vivo)",
+        scientificName: "Flora domestica var. urbana (Simulado - Falló API)",
+        healthScore: 91,
+        title: "Follaje verde con buen tono fotosintético y requerimiento de riego balanceado",
+        solution: `No pudimos contactar a la IA de Gemini. Detalle: ${e.message || e}. Asegúrate de que tu API Key sea correcta y tenga la API "Generative Language" habilitada en Google AI Studio. Se muestra un diagnóstico simulado local.`,
+        description: "Especie vegetal seleccionada para el cultivo urbano en el hogar, adaptable a macetas y contenedores en balcones o ventanas.",
+        toxicity: "Generalmente segura para mascotas en dosis normales, pero se recomienda evitar que los gatos muerdan las hojas.",
+        propagation: "Se propaga fácilmente por semillas en sustrato húmedo o división de raíces durante la primavera.",
+        trivia: "Los huertos urbanos y de hogar ayudan a reducir el estrés y mejoran la calidad del aire interior al liberar oxígeno fresco.",
+        nutrientsRequired: {
+          npk: "Humus orgánico con Nitrógeno (N) y Potasio (K)",
+          homemadeSource: 'Infusión de cáscara de plátano (rica en potasio) y 1 cucharada de posos de café seco para nitrógeno natural.',
+          commercialSource: 'Abono orgánico vegetal NPK balanceado en vivero local.'
+        },
+        care: {
+          light: "Luz solar indirecta o sol suave de la mañana (4 a 6 horas diarias).",
+          water: "Regar cuando los primeros 3 cm superiores del sustrato estén secos al tacto.",
+          soil: "Sustrato suelto con compost orgánico, fibra de coco y perlita.",
+          fertilizer: "Aplicar humus o abono casero una vez al mes durante primavera y verano."
+        },
+        climate: {
+          temperature: "18°C - 27°C ideal para hogar o balcón soleado",
+          waterFreq: "Cada 3 o 4 días en días cálidos / semanal en clima fresco"
+        },
+        lifeSpanYears: "Planta perenne o ciclo agrícola completo con excelente longevidad en casa"
+      };
     }
-
-    // Fallback botánico confiable
-    return {
-      name: "Huerto u Hogar (Planta Escaneada en Vivo)",
-      scientificName: "Flora domestica var. urbana",
-      healthScore: 91,
-      title: "Follaje verde con buen tono fotosintético y requerimiento de riego balanceado",
-      solution: "Asegurar que el fondo de la maceta tenga orificios despejados para que el agua sobrante drene sin pudrir raíces.",
-      nutrientsRequired: {
-        npk: "Humus orgánico con Nitrógeno (N) y Potasio (K)",
-        homemadeSource: 'Infusión de cáscara de plátano (rica en potasio) y 1 cucharada de posos de café seco para nitrógeno natural.',
-        commercialSource: 'Abono orgánico vegetal NPK balanceado en vivero local.'
-      },
-      care: {
-        light: "Luz solar indirecta o sol suave de la mañana (4 a 6 horas diarias).",
-        water: "Regar cuando los primeros 3 cm superiores del sustrato estén secos al tacto.",
-        soil: "Sustrato suelto con compost orgánico, fibra de coco y perlita.",
-        fertilizer: "Aplicar humus o abono casero una vez al mes durante primavera y verano."
-      },
-      climate: {
-        temperature: "18°C - 27°C ideal para hogar o balcón soleado",
-        waterFreq: "Cada 3 o 4 días en días cálidos / semanal en clima fresco"
-      },
-      lifeSpanYears: "Planta perenne o ciclo agrícola completo con excelente longevidad en casa"
-    };
   };
   return (
     <div className="fixed inset-0 z-50 bg-[#1D1F1D] text-white font-['Plus_Jakarta_Sans'] flex flex-col justify-between overflow-hidden">

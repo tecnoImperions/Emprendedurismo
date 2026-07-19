@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { interactivePlants } from '../data/plantData';
 import { savePlantToUserGarden, getActiveUser } from '../data/userDatabase';
 import { CameraIcon, SparklesIcon, LeafIcon, ShieldCheckIcon, ThermometerIcon, DropletIcon, RotateCwIcon, AlertTriangleIcon, CheckCircleIcon } from './Icons';
@@ -19,11 +20,16 @@ export const ScannerModal = ({ isOpen, onClose }) => {
   const CENTRAL_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || ['AQ', '.Ab8RN6J', 'oxs6yw_boPI', '-_bPJlW-NTme', '44BI4r_70f6E', 'op-WHaAQ'].join('');
 
   useEffect(() => {
-    const savedKey = localStorage.getItem('FLORAMETRICS_GEMINI_KEY');
+    const blockedKey = ['AQ', '.Ab8RN6J', 'oxs6yw_boPI', '-_bPJlW-NTme', '44BI4r_70f6E', 'op-WHaAQ'].join('');
+    let savedKey = localStorage.getItem('FLORAMETRICS_GEMINI_KEY');
+    if (savedKey === blockedKey) {
+      localStorage.removeItem('FLORAMETRICS_GEMINI_KEY');
+      savedKey = null;
+    }
     const active = (savedKey && savedKey.startsWith('AQ.')) ? savedKey : CENTRAL_API_KEY;
     setApiKey(active);
     localStorage.setItem('FLORAMETRICS_GEMINI_KEY', active);
-  }, []);
+  }, [CENTRAL_API_KEY]);
 
   const handleSaveApiKey = (key) => {
     setApiKey(key);
@@ -48,7 +54,11 @@ export const ScannerModal = ({ isOpen, onClose }) => {
 
   // Función de Análisis REAL con Google Gemini Vision API
   const analyzeImageWithGemini = async (file) => {
-    const activeKey = apiKey || CENTRAL_API_KEY;
+    const blockedKey = ['AQ', '.Ab8RN6J', 'oxs6yw_boPI', '-_bPJlW-NTme', '44BI4r_70f6E', 'op-WHaAQ'].join('');
+    let activeKey = apiKey || CENTRAL_API_KEY;
+    if (activeKey === blockedKey) {
+      activeKey = import.meta.env.VITE_GEMINI_API_KEY;
+    }
 
     if (!activeKey) {
       // Si el usuario no ha puesto su API Key, abrimos la configuración y avisamos
@@ -71,7 +81,11 @@ export const ScannerModal = ({ isOpen, onClose }) => {
         "title": "⚠️ Sujeto no válido para análisis botánico",
         "solution": "El escáner de FloraMetrics está calibrado exclusivamente para huertos en casa y plantas de hogar. Has fotografiado una persona u objeto que no pertenece al ámbito botánico. Por favor, enfoca la cámara directamente hacia las hojas, tallos o maceta de tu cultivo para analizar sus necesidades.",
         "climate": { "temperature": "N/A", "waterFreq": "N/A" },
-        "lifeSpanYears": "N/A"
+        "lifeSpanYears": "N/A",
+        "description": "No botánico",
+        "toxicity": "N/A",
+        "propagation": "N/A",
+        "trivia": "N/A"
       }
 
       Si la imagen SÍ ES de una planta, hortaliza, verdura o huerto en casa, devuelve ÚNICAMENTE el siguiente JSON exacto y válido:
@@ -81,6 +95,10 @@ export const ScannerModal = ({ isOpen, onClose }) => {
         "healthScore": 88,
         "title": "Diagnóstico principal de estado (ej. Follaje saludable o Signos leves de estrés hídrico)",
         "solution": "Recomendación institucional detallada de riego, iluminación y cuidado para extender su ciclo vital y cubrir sus necesidades en el hogar",
+        "description": "Una breve descripción de la especie detectada y su rol en el huerto o decoración del hogar en 1 o 2 oraciones.",
+        "toxicity": "Información sobre toxicidad para mascotas (perros/gatos), ej. 'No tóxica para mascotas' o 'Tóxica para gatos si se ingiere'",
+        "propagation": "Método recomendado de propagación (ej. 'Por esquejes de tallo en agua' o 'Mediante semillas en primavera')",
+        "trivia": "Un dato curioso, histórico o botánico interesante sobre esta planta en el huerto urbano",
         "nutrientsRequired": {
           "npkFormula": "Fórmula NPK recomendada (ej. NPK 4-8-12 o NPK 10-10-10)",
           "keyNutrient": "Nutriente prioritario faltante (ej. Potasio K y Calcio Ca)",
@@ -94,77 +112,80 @@ export const ScannerModal = ({ isOpen, onClose }) => {
         "lifeSpanYears": "Proyección de longevidad estimada (ej. 15+ Años o Ciclo productivo anual)"
       }`;
 
-      // Intentar primero con el modelo oficial gemini-1.5-flash (o gemini-1.5-pro de respaldo)
-      let response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${activeKey}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [
-              {
-                parts: [
-                  { text: prompt },
-                  { inline_data: { mime_type: mimeType, data: base64 } }
-                ]
-              }
-            ]
-          })
-        }
-      );
+      const genAI = new GoogleGenerativeAI(activeKey);
+      let model = genAI.getGenerativeModel({ model: 'gemini-3.5-flash' });
+      let responseText = '';
 
-      if (!response.ok) {
-        console.warn(`Intento con gemini-1.5-flash devolvió ${response.status}. Intentando modelo alternativo...`);
-        response = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${activeKey}`,
+      try {
+        const result = await model.generateContent([
+          prompt,
           {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              contents: [
-                {
-                  parts: [
-                    { text: prompt },
-                    { inline_data: { mime_type: mimeType, data: base64 } }
-                  ]
-                }
-              ]
-            })
+            inlineData: {
+              data: base64,
+              mimeType: mimeType
+            }
           }
-        );
+        ]);
+        const response = await result.response;
+        responseText = response.text();
+      } catch (flashError) {
+        console.warn('⚠️ Falló gemini-3.5-flash en ScannerModal, intentando con gemini-flash-latest...', flashError);
+        model = genAI.getGenerativeModel({ model: 'gemini-flash-latest' });
+        try {
+          const result = await model.generateContent([
+            prompt,
+            {
+              inlineData: {
+                data: base64,
+                mimeType: mimeType
+              }
+            }
+          ]);
+          const response = await result.response;
+          responseText = response.text();
+        } catch (proError) {
+          console.warn('⚠️ Falló gemini-flash-latest en ScannerModal, intentando con gemini-2.5-flash...', proError);
+          model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+          const result = await model.generateContent([
+            prompt,
+            {
+              inlineData: {
+                data: base64,
+                mimeType: mimeType
+              }
+            }
+          ]);
+          const response = await result.response;
+          responseText = response.text();
+        }
       }
 
-      if (!response.ok) {
-        throw new Error(`Respuesta de servidor Gemini no disponible (${response.status})`);
-      }
-
-      const data = await response.json();
-      const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-      
       // Extractor inteligente de JSON por Regex que ignora texto explicativo exterior
-      const match = rawText.match(/\{[\s\S]*\}/);
-      const jsonStr = match ? match[0] : rawText.replace(/```json/g, '').replace(/```/g, '').trim();
-      return JSON.parse(jsonStr);
+      const match = responseText.match(/\{[\s\S]*\}/);
+      const jsonStr = match ? match[0] : responseText.replace(/```json/g, '').replace(/```/g, '').trim();
+      const parsedData = JSON.parse(jsonStr);
+      parsedData.isSimulated = false;
+      return parsedData;
     } catch (error) {
       console.error('Error procesando imagen con Gemini Vision AI:', error);
       // Fallback botánico inteligente de alta precisión si hay problema de red o cuota en el momento
       return {
         isPlantOrGarden: true,
+        isSimulated: true,
         name: "Monstera / Especie de Huerto u Hogar",
-        scientificName: "Flora domestica (Diagnóstico en Vivo)",
+        scientificName: "Flora domestica (Simulado - Falló API)",
         healthScore: 88,
         title: "Follaje saludable con leve necesidad de aireación en sustrato",
-        solution: "Asegura que la maceta o mesa de cultivo tenga drenaje fluido. Si el riego fue reciente, deja secar los primeros 3 cm de tierra antes de volver a regar.",
+        solution: `No pudimos contactar a la IA de Gemini. Detalle: ${error.message || error}. Asegúrate de que tu API Key sea correcta y tenga la API "Generative Language" habilitada en Google AI Studio. Se muestra un diagnóstico simulado local.`,
+        description: "Planta perenne de interior con grandes hojas brillantes y lóbulos característicos, muy popular en la decoración del hogar y huertos urbanos.",
+        toxicity: "Tóxica para perros y gatos debido a cristales de oxalato de calcio insolubles.",
+        propagation: "Fácil de propagar mediante esquejes de tallo que incluyan al menos un nudo o raíz aérea.",
+        trivia: "Su nombre común procede de 'monstruosa' debido a las perforaciones inusuales que desarrollan sus hojas adultas para dejar pasar la luz y el viento.",
         nutrientsRequired: {
-          npk: "Humus de Lombriz (Alto en Nitrógeno N natural)",
-          homemadeSource: "Té de cáscaras de plátano para aportar Potasio (K) una vez al mes o cáscara de huevo triturada para Calcio.",
-          commercialSource: "Abono orgánico balanceado en vivero local o fertilizante natural NPK 10-10-10."
-        },
-        care: {
-          light: "Luz brillante indirecta o sol matutino suave (4-6 horas).",
-          water: "Regar cuando el tercio superior del sustrato esté seco al tacto.",
-          soil: "Sustrato suelto con compost y perlita/fibra de coco.",
-          fertilizer: "Aplicar abono orgánico casero cada 3 o 4 semanas en época cálida."
+          npkFormula: "NPK 10-10-10",
+          keyNutrient: "Humus de Lombriz (Alto en Nitrógeno N natural)",
+          whereToFind: "Té de cáscaras de plátano para aportar Potasio (K) una vez al mes o cáscara de huevo triturada para Calcio.",
+          deficiencySymptoms: "Asegura que la maceta o mesa de cultivo tenga drenaje fluido. Si el riego fue reciente, deja secar los primeros 3 cm de tierra antes de volver a regar."
         },
         climate: {
           temperature: "18°C - 26°C ideal para el hogar",
@@ -431,7 +452,7 @@ export const ScannerModal = ({ isOpen, onClose }) => {
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-extrabold text-[#2E6C45] uppercase">Diagnóstico Detectado</span>
                       <span className="text-xs font-mono text-[#5A6C61]">
-                        {customDiagnosis ? '🟢 Gemini Vision AI' : 'Flora AI Engine'}
+                        {customDiagnosis ? (customDiagnosis.isSimulated ? '⚠️ Fallback Botánico (Sin Conexión)' : '🟢 Gemini Vision AI') : 'Flora AI Engine'}
                       </span>
                     </div>
                     <h4 className="text-base font-bold text-[#1D1F1D] flex items-center gap-1.5">

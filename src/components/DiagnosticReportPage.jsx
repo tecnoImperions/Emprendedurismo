@@ -157,6 +157,23 @@ export const DiagnosticReportPage = ({ reportData, onNavigate, onScanAgain }) =>
         </div>
       </div>
 
+      {/* Alerta de Reporte Simulado en caso de error en la API de Gemini */}
+      {reportData.isSimulated && (
+        <div className="bg-amber-50 border border-amber-200 p-4 rounded-2xl mb-6 text-amber-900 text-xs shadow-xs animate-fadeIn">
+          <div className="flex gap-2">
+            <span className="text-base col-span-1 shrink-0">⚠️</span>
+            <div>
+              <p className="font-extrabold text-amber-950 text-sm">Reporte Botánico Simulado (Sin Conexión)</p>
+              <p className="mt-1 leading-relaxed">
+                Este diagnóstico no fue procesado por la inteligencia artificial real porque la llamada a la API de Gemini falló.
+                Esto suele ocurrir cuando el <strong>VITE_GEMINI_API_KEY</strong> en el archivo <code>.env</code> está vacío, no se ha cargado correctamente, o no tiene permisos de acceso al modelo en Google AI Studio. 
+                Por favor, asegúrate de que la clave del proyecto esté activa y tenga habilitada la API "Generative Language".
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ENCABEZADO Y TARJETA PRINCIPAL DEL REPORTE (PÁGINA COMPLETA) */}
       <div className="bg-[#FFFFFF] border border-[#DCE7E0] rounded-3xl p-6 sm:p-8 shadow-lg mb-8">
         
