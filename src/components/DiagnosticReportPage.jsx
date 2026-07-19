@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { savePlantToUserGarden, getActiveUser } from '../data/userDatabase';
-import { SparklesIcon, SproutIcon, ThermometerIcon, LeafIcon, DropletIcon, CheckCircleIcon, UsersIcon } from './Icons';
+import { SparklesIcon, SproutIcon, ThermometerIcon, LeafIcon, DropletIcon, CheckCircleIcon, UsersIcon, SunIcon, ShieldCheckIcon } from './Icons';
 
 export const DiagnosticReportPage = ({ reportData, onNavigate, onScanAgain }) => {
   const [savedFeedback, setSavedFeedback] = useState(false);
@@ -88,6 +88,80 @@ export const DiagnosticReportPage = ({ reportData, onNavigate, onScanAgain }) =>
           <div className="p-4 rounded-xl bg-red-50/50 border border-red-100 text-xs text-red-700 text-left leading-relaxed">
             <strong>Detalle del sistema:</strong> {reportData.title || 'Muestra de imagen no botánica.'} {reportData.solution}
           </div>
+
+          {/* Guía visual de fotos de referencia */}
+          <div className="bg-white p-5 rounded-2xl border border-[#DCE7E0] space-y-4 text-left">
+            <h5 className="text-xs font-extrabold text-[#1D1F1D] flex items-center gap-1.5 border-b border-[#E8EEEA] pb-2 uppercase tracking-wide">
+              <span>📸 Guía para un Escaneo Perfecto</span>
+            </h5>
+            
+            <div className="grid grid-cols-2 gap-3">
+              {/* Error: Muy Cerca */}
+              <div className="rounded-xl border border-red-100 p-2 bg-red-50/20 flex flex-col justify-between">
+                <div>
+                  <div className="relative rounded-lg overflow-hidden h-16 bg-gray-100 mb-1.5 border border-red-200">
+                    <img src="/images/scan_too_close.png" alt="Muy cerca" className="w-full h-full object-cover" />
+                    <span className="absolute top-1 left-1 bg-red-600 text-white text-[8px] font-extrabold px-1 rounded-md uppercase scale-75 origin-top-left">
+                      Mal
+                    </span>
+                  </div>
+                  <strong className="text-[10px] text-red-950 block font-extrabold">🔍 Muy Cerca</strong>
+                  <p className="text-[9px] text-[#526057] leading-tight mt-0.5">
+                    Evita detalles borrosos y sin contexto.
+                  </p>
+                </div>
+              </div>
+
+              {/* Error: Muy Lejos */}
+              <div className="rounded-xl border border-red-100 p-2 bg-red-50/20 flex flex-col justify-between">
+                <div>
+                  <div className="relative rounded-lg overflow-hidden h-16 bg-gray-100 mb-1.5 border border-red-200">
+                    <img src="/images/scan_too_far.png" alt="Muy lejos" className="w-full h-full object-cover" />
+                    <span className="absolute top-1 left-1 bg-red-600 text-white text-[8px] font-extrabold px-1 rounded-md uppercase scale-75 origin-top-left">
+                      Mal
+                    </span>
+                  </div>
+                  <strong className="text-[10px] text-red-950 block font-extrabold">🗺️ Muy Lejos</strong>
+                  <p className="text-[9px] text-[#526057] leading-tight mt-0.5">
+                    La planta se pierde en la distancia.
+                  </p>
+                </div>
+              </div>
+
+              {/* Error: Varias Especies */}
+              <div className="rounded-xl border border-red-100 p-2 bg-red-50/20 flex flex-col justify-between">
+                <div>
+                  <div className="relative rounded-lg overflow-hidden h-16 bg-gray-100 mb-1.5 border border-red-200">
+                    <img src="/images/scan_too_many.png" alt="Varias especies" className="w-full h-full object-cover" />
+                    <span className="absolute top-1 left-1 bg-red-600 text-white text-[8px] font-extrabold px-1 rounded-md uppercase scale-75 origin-top-left">
+                      Mal
+                    </span>
+                  </div>
+                  <strong className="text-[10px] text-red-950 block font-extrabold">🌿 Mezcladas</strong>
+                  <p className="text-[9px] text-[#526057] leading-tight mt-0.5">
+                    Varias plantas juntas confunden a la IA.
+                  </p>
+                </div>
+              </div>
+
+              {/* Correcto: Encuadre Perfecto */}
+              <div className="rounded-xl border border-emerald-100 p-2 bg-emerald-50/20 flex flex-col justify-between">
+                <div>
+                  <div className="relative rounded-lg overflow-hidden h-16 bg-gray-100 mb-1.5 border border-emerald-200">
+                    <img src="/images/scan_perfect.png" alt="Encuadre perfecto" className="w-full h-full object-cover" />
+                    <span className="absolute top-1 left-1 bg-[#2E6C45] text-white text-[8px] font-extrabold px-1 rounded-md uppercase scale-75 origin-top-left">
+                      Bien
+                    </span>
+                  </div>
+                  <strong className="text-[10px] text-emerald-950 block font-extrabold">✨ Ideal</strong>
+                  <p className="text-[9px] text-[#526057] leading-tight mt-0.5">
+                    Hojas visibles y centradas a 30-50 cm.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div className="pt-2">
             <button
               onClick={onScanAgain}
@@ -250,7 +324,9 @@ export const DiagnosticReportPage = ({ reportData, onNavigate, onScanAgain }) =>
         {/* Riego */}
         <div className="bg-[#FFFFFF] p-5 rounded-2xl border border-[#DCE7E0] shadow-sm flex flex-col justify-between">
           <div>
-            <div className="w-10 h-10 rounded-xl bg-[#EBF5EF] text-[#2E6C45] flex items-center justify-center text-xl mb-3">💧</div>
+            <div className="w-10 h-10 rounded-xl bg-[#EBF5EF] text-[#2E6C45] flex items-center justify-center mb-3">
+              <DropletIcon size={20} className="text-[#2E6C45]" />
+            </div>
             <h4 className="text-xs font-extrabold text-[#1D1F1D] uppercase tracking-wider mb-1">Riego Óptimo</h4>
             <p className="text-xs text-[#526057] leading-relaxed">{care.water || climate.waterFreq || 'Regar cuando el tercio superior esté seco al tacto.'}</p>
           </div>
@@ -260,7 +336,9 @@ export const DiagnosticReportPage = ({ reportData, onNavigate, onScanAgain }) =>
         {/* Luz */}
         <div className="bg-[#FFFFFF] p-5 rounded-2xl border border-[#DCE7E0] shadow-sm flex flex-col justify-between">
           <div>
-            <div className="w-10 h-10 rounded-xl bg-[#FFF9E6] text-[#D99A00] flex items-center justify-center text-xl mb-3">☀️</div>
+            <div className="w-10 h-10 rounded-xl bg-[#FFF9E6] text-[#D99A00] flex items-center justify-center mb-3">
+              <SunIcon size={20} className="text-[#D99A00]" />
+            </div>
             <h4 className="text-xs font-extrabold text-[#1D1F1D] uppercase tracking-wider mb-1">Exposición a la Luz</h4>
             <p className="text-xs text-[#526057] leading-relaxed">{care.light || 'Sol matutino brillante o luz indirecta (4-6 horas).'}</p>
           </div>
@@ -270,7 +348,9 @@ export const DiagnosticReportPage = ({ reportData, onNavigate, onScanAgain }) =>
         {/* Sustrato */}
         <div className="bg-[#FFFFFF] p-5 rounded-2xl border border-[#DCE7E0] shadow-sm flex flex-col justify-between">
           <div>
-            <div className="w-10 h-10 rounded-xl bg-[#F5EFE6] text-[#8C5D2A] flex items-center justify-center text-xl mb-3">🌱</div>
+            <div className="w-10 h-10 rounded-xl bg-[#F5EFE6] text-[#8C5D2A] flex items-center justify-center mb-3">
+              <SproutIcon size={20} className="text-[#8C5D2A]" />
+            </div>
             <h4 className="text-xs font-extrabold text-[#1D1F1D] uppercase tracking-wider mb-1">Sustrato & Maceta</h4>
             <p className="text-xs text-[#526057] leading-relaxed">{care.soil || 'Mezcla suelta con compost orgánico y perlita para drenar fluídamente.'}</p>
           </div>
@@ -280,7 +360,9 @@ export const DiagnosticReportPage = ({ reportData, onNavigate, onScanAgain }) =>
         {/* Plagas */}
         <div className="bg-[#FFFFFF] p-5 rounded-2xl border border-[#DCE7E0] shadow-sm flex flex-col justify-between">
           <div>
-            <div className="w-10 h-10 rounded-xl bg-[#FEECEB] text-[#D93829] flex items-center justify-center text-xl mb-3">🛡️</div>
+            <div className="w-10 h-10 rounded-xl bg-[#FEECEB] text-[#D93829] flex items-center justify-center mb-3">
+              <ShieldCheckIcon size={20} className="text-[#D93829]" />
+            </div>
             <h4 className="text-xs font-extrabold text-[#1D1F1D] uppercase tracking-wider mb-1">Protección Sin Tóxicos</h4>
             <p className="text-xs text-[#526057] leading-relaxed">{care.fertilizer || 'Revisión quincenal. Pulverizar jabón potásico diluido al atardecer ante plagas.'}</p>
           </div>

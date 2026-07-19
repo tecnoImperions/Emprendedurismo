@@ -190,8 +190,8 @@ export const HistorySection = ({ onSelectReport, onOpenScanner, currentUser, onO
       {/* Grid de Tarjetas del Historial */}
       {filtered.length === 0 ? (
         <div className="bg-[#FFFFFF] border border-[#DCE7E0] rounded-3xl p-12 text-center shadow-xs">
-          <div className="w-16 h-16 rounded-2xl bg-[#F3F8F5] text-[#526057] flex items-center justify-center mx-auto text-3xl mb-4">
-            🌱
+          <div className="w-16 h-16 rounded-2xl bg-[#F3F8F5] text-[#2E6C45] flex items-center justify-center mx-auto mb-4">
+            <SproutIcon size={32} />
           </div>
           <h3 className="text-lg font-extrabold text-[#1D1F1D]">No hay registros para este perfil</h3>
           <p className="text-xs text-[#526057] mt-1 max-w-md mx-auto">

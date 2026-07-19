@@ -16,6 +16,7 @@ import { AuthModal } from './components/AuthModal';
 import { AdminSection } from './components/AdminSection';
 import { getActiveUser, saveActiveUser } from './data/userDatabase';
 import { supabase } from './lib/supabaseClient';
+import { CameraIcon } from './components/Icons';
 import './App.css';
 
 function App() {
@@ -23,7 +24,21 @@ function App() {
   const [activeModule, setActiveModule] = useState('home');
   const [selectedReport, setSelectedReport] = useState(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [currentUser, setCurrentUser] = useState(getActiveUser());
+  // Cargar usuario autenticado real (sin contar perfiles mockup de demostración)
+  const getAuthUserOnly = () => {
+    try {
+      const savedUserId = localStorage.getItem('FLORAMETRICS_ACTIVE_USER_ID');
+      const customUserJson = localStorage.getItem('FLORAMETRICS_CUSTOM_USER_DATA');
+      if (customUserJson && savedUserId && (savedUserId.startsWith('local_') || JSON.parse(customUserJson).id === savedUserId)) {
+        return JSON.parse(customUserJson);
+      }
+    } catch (e) {
+      console.error('Error cargando usuario de autenticación:', e);
+    }
+    return null;
+  };
+
+  const [currentUser, setCurrentUser] = useState(getAuthUserOnly());
 
   useEffect(() => {
     // Sincronización continua de sesión y base de datos con Supabase
@@ -142,7 +157,9 @@ function App() {
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4 mb-8">
                 <div className="p-5 sm:p-6 bg-[#FFFFFF] border border-[#DCE7E0] rounded-3xl shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-2xl bg-[#EBF5EF] text-[#2E6C45] flex items-center justify-center text-xl font-bold">📷</div>
+                    <div className="w-12 h-12 rounded-2xl bg-[#EBF5EF] text-[#2E6C45] flex items-center justify-center">
+                      <CameraIcon size={20} className="text-[#2E6C45]" />
+                    </div>
                     <div>
                       <h4 className="text-base font-extrabold text-[#1D1F1D]">Escáner QR Botánico Directo en Vivo</h4>
                       <p className="text-xs text-[#526057]">Abre tu cámara y enfoca como al leer un código QR. Respaldo fotográfico en Cloudinary: <strong>ll3h5fkl</strong>.</p>
@@ -153,7 +170,6 @@ function App() {
                     className="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-gradient-to-r from-[#2E6C45] to-[#3B8255] text-white font-extrabold text-xs sm:text-sm shadow-md hover:shadow-lg transition-all shrink-0 flex items-center justify-center gap-2 active:scale-95"
                   >
                     <span>Abrir Cámara en Vivo</span>
-                    <span>✨</span>
                   </button>
                 </div>
               </div>
@@ -211,7 +227,11 @@ function App() {
           {/* MÓDULO 5: MIS HUERTOS & USUARIOS */}
           {activeModule === 'huertos' && (
             <div className="animate-fadeIn pt-4">
-              <UserDashboardSection onOpenScanner={() => handleSelectModule('scanner')} />
+              <UserDashboardSection
+                onOpenScanner={() => handleSelectModule('scanner')}
+                currentUser={currentUser}
+                onNavigate={handleSelectModule}
+              />
             </div>
           )}
 
@@ -224,9 +244,8 @@ function App() {
 
           {/* MÓDULO 7: CLIMA, RIEGO Y CULTIVOS DE HOGAR */}
           {activeModule === 'guias' && (
-            <div className="animate-fadeIn pt-4 space-y-8">
+            <div className="animate-fadeIn pt-4">
               <ClimatizationSection />
-              <HuertoSection />
             </div>
           )}
 

@@ -177,4 +177,10 @@ export const UserIcon = ({ size = 20, className = '' }) => (
   </svg>
 );
 
+export const CloudIcon = ({ size = 20, className = '' }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d="M17.5 19A3.5 3.5 0 0 0 21 15.5c0-2.79-2.54-4.5-5-4.5-.42 0-.83.04-1.24.12a7 7 0 1 0-11.83 6.64A3.5 3.5 0 0 0 7.5 19z"/>
+  </svg>
+);
+
 

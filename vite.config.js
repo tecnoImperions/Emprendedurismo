@@ -3,6 +3,27 @@ import react from '@vitejs/plugin-react'
 import fs from 'fs'
 import path from 'path'
 
+// Copiar imágenes inmediatamente al cargar la configuración
+const immediateTargetDir = path.resolve(__dirname, 'public/images')
+if (!fs.existsSync(immediateTargetDir)) {
+  fs.mkdirSync(immediateTargetDir, { recursive: true })
+}
+const immediateSourceDir = 'C:/Users/Juan Andres/.gemini/antigravity/brain/1a0b7c40-36b3-478b-8ddb-aa421957005d'
+const immediateFilesMap = {
+  'scan_too_close_1784464871865.png': 'scan_too_close.png',
+  'scan_too_far_1784464886294.png': 'scan_too_far.png',
+  'scan_multiple_1784464900452.png': 'scan_too_many.png',
+  'scan_perfect_1784464913441.png': 'scan_perfect.png'
+}
+for (const [srcName, destName] of Object.entries(immediateFilesMap)) {
+  const srcPath = path.join(immediateSourceDir, srcName)
+  const destPath = path.join(immediateTargetDir, destName)
+  if (fs.existsSync(srcPath)) {
+    fs.copyFileSync(srcPath, destPath)
+  }
+}
+
+
 // Plugin to copy generated images from brain folder to public/images
 function copyGeneratedImages() {
   return {

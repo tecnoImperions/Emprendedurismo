@@ -1,5 +1,5 @@
 import React from 'react';
-import { CameraIcon, SproutIcon, ThermometerIcon, UsersIcon, SparklesIcon, DatabaseIcon, LeafIcon, ClipboardIcon, UserIcon, HomeIcon } from './Icons';
+import { CameraIcon, SproutIcon, ThermometerIcon, UsersIcon, SparklesIcon, DatabaseIcon, LeafIcon, ClipboardIcon, UserIcon, HomeIcon, CloudIcon } from './Icons';
 
 export const Navbar = ({ activeModule, onSelectModule, onOpenScanner, onOpenAuthModal, currentUser, onLogout }) => {
   const isAdmin = currentUser && (
@@ -11,11 +11,9 @@ export const Navbar = ({ activeModule, onSelectModule, onOpenScanner, onOpenAuth
 
   const modules = [
     { id: 'home', label: 'Inicio', icon: <HomeIcon size={17} /> },
-    { id: 'historial', label: 'Historial Nube', icon: <ClipboardIcon size={17} /> },
-    { id: 'huertos', label: 'Mis Huertos', icon: <DatabaseIcon size={17} /> },
-    { id: 'nutrientes', label: 'Nutrientes NPK', icon: <LeafIcon size={17} /> },
-    { id: 'guias', label: 'Clima & Riego', icon: <ThermometerIcon size={17} /> },
-    { id: 'precios', label: 'Planes VIP', icon: <SparklesIcon size={17} /> },
+    { id: 'huertos', label: 'Mi Jardín', icon: <DatabaseIcon size={17} /> },
+    { id: 'guias', label: 'Clima & Sol', icon: <CloudIcon size={17} /> },
+    { id: 'comunidad', label: 'Proveedores', icon: <UsersIcon size={17} /> },
   ];
 
   if (isAdmin) {
@@ -102,7 +100,7 @@ export const Navbar = ({ activeModule, onSelectModule, onOpenScanner, onOpenAuth
               className="hidden sm:flex px-5 py-2.5 rounded-2xl bg-gradient-to-r from-[#2E6C45] to-[#3B8255] text-white font-extrabold text-xs sm:text-sm items-center gap-2 shadow-md hover:shadow-lg hover:from-[#255838] transition-all shrink-0 active:scale-95"
             >
               <CameraIcon size={17} className="text-[#5CCF8D]" />
-              <span>Cámara QR ✨</span>
+              <span>Cámara QR</span>
             </button>
           </div>
         </div>
@@ -129,38 +127,7 @@ export const Navbar = ({ activeModule, onSelectModule, onOpenScanner, onOpenAuth
             <span className="text-[10px] tracking-tight mt-0.5 font-bold">Inicio</span>
           </button>
 
-          {/* Módulo 2: Historial */}
-          <button
-            onClick={() => onSelectModule('historial')}
-            className={`flex flex-col items-center justify-center flex-1 py-1 transition-all ${
-              activeModule === 'historial' || activeModule === 'reporte' ? 'text-[#2E6C45] font-extrabold scale-105' : 'text-[#64746A]'
-            }`}
-          >
-            <div className={`p-1.5 rounded-xl ${activeModule === 'historial' || activeModule === 'reporte' ? 'bg-[#EBF5EF]' : ''}`}>
-              <ClipboardIcon size={18} />
-            </div>
-            <span className="text-[10px] tracking-tight mt-0.5 font-bold">Historial</span>
-          </button>
-
-          {/* 
-            ========================================================================
-            SLOT 3: BOTÓN CENTRAL DE CÁMARA ELEVADO (ESTILO APP BANCARIA / QR DIRECTO)
-            ========================================================================
-          */}
-          <div className="flex-1 flex flex-col items-center justify-center relative -top-4">
-            <button
-              onClick={onOpenScanner}
-              aria-label="Abrir cámara IA para escanear planta o cultivo"
-              className="w-14 h-14 rounded-full bg-gradient-to-tr from-[#2E6C45] via-[#357B4E] to-[#4DB578] text-white shadow-xl hover:shadow-2xl flex items-center justify-center border-4 border-[#FFFFFF] active:scale-90 transition-transform"
-            >
-              <CameraIcon size={24} className="text-white animate-pulse" />
-            </button>
-            <span className="text-[9px] font-extrabold text-[#2E6C45] tracking-tight mt-1 uppercase bg-[#EBF5EF] px-2 py-0.5 rounded-full border border-[#CDE5D5]">
-              Cámara QR
-            </span>
-          </div>
-
-          {/* Módulo 4: Mis Huertos */}
+          {/* Módulo 2: Mi Jardín */}
           <button
             onClick={() => onSelectModule('huertos')}
             className={`flex flex-col items-center justify-center flex-1 py-1 transition-all ${
@@ -170,20 +137,51 @@ export const Navbar = ({ activeModule, onSelectModule, onOpenScanner, onOpenAuth
             <div className={`p-1.5 rounded-xl ${activeModule === 'huertos' ? 'bg-[#EBF5EF]' : ''}`}>
               <DatabaseIcon size={18} />
             </div>
-            <span className="text-[10px] tracking-tight mt-0.5 font-bold">Huertos</span>
+            <span className="text-[10px] tracking-tight mt-0.5 font-bold">Mi Jardín</span>
           </button>
 
-          {/* Módulo 5: Nutrientes NPK */}
+          {/* 
+            ========================================================================
+            SLOT 3: BOTÓN CENTRAL DE CÁMARA ELEVADO (ESTILO APP BANCARIA / QR DIRECTO)
+            ========================================================================
+          */}
+          <div className="flex-1 flex flex-col items-center justify-center relative -top-3">
+            <button
+              onClick={onOpenScanner}
+              aria-label="Abrir cámara IA para escanear planta o cultivo"
+              className="w-14 h-14 rounded-full bg-gradient-to-tr from-[#2E6C45] via-[#357B4E] to-[#4DB578] text-white shadow-xl hover:shadow-2xl flex items-center justify-center border-4 border-[#FFFFFF] active:scale-90 transition-transform"
+            >
+              <CameraIcon size={24} className="text-white animate-pulse" />
+            </button>
+            <span className="text-[10px] tracking-tight mt-1 font-bold text-[#64746A]">
+              Escanear
+            </span>
+          </div>
+
+          {/* Módulo 4: Clima */}
           <button
-            onClick={() => onSelectModule('nutrientes')}
+            onClick={() => onSelectModule('guias')}
             className={`flex flex-col items-center justify-center flex-1 py-1 transition-all ${
-              activeModule === 'nutrientes' ? 'text-[#2E6C45] font-extrabold scale-105' : 'text-[#64746A]'
+              activeModule === 'guias' ? 'text-[#2E6C45] font-extrabold scale-105' : 'text-[#64746A]'
             }`}
           >
-            <div className={`p-1.5 rounded-xl ${activeModule === 'nutrientes' ? 'bg-[#EBF5EF]' : ''}`}>
-              <LeafIcon size={18} />
+            <div className={`p-1.5 rounded-xl ${activeModule === 'guias' ? 'bg-[#EBF5EF]' : ''}`}>
+              <CloudIcon size={18} />
             </div>
-            <span className="text-[10px] tracking-tight mt-0.5 font-bold">Nutrientes</span>
+            <span className="text-[10px] tracking-tight mt-0.5 font-bold">Clima</span>
+          </button>
+
+          {/* Módulo 5: Proveedores */}
+          <button
+            onClick={() => onSelectModule('comunidad')}
+            className={`flex flex-col items-center justify-center flex-1 py-1 transition-all ${
+              activeModule === 'comunidad' ? 'text-[#2E6C45] font-extrabold scale-105' : 'text-[#64746A]'
+            }`}
+          >
+            <div className={`p-1.5 rounded-xl ${activeModule === 'comunidad' ? 'bg-[#EBF5EF]' : ''}`}>
+              <UsersIcon size={18} />
+            </div>
+            <span className="text-[10px] tracking-tight mt-0.5 font-bold">Proveedores</span>
           </button>
 
         </div>

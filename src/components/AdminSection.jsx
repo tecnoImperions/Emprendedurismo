@@ -44,7 +44,7 @@ export const AdminSection = () => {
       return p;
     });
     saveProvidersList(updated);
-    showNotification('✅ Proveedor aprobado y publicado con éxito.');
+    showNotification('Proveedor aprobado y publicado con éxito.');
   };
 
   // Desactivar Proveedor
@@ -56,7 +56,7 @@ export const AdminSection = () => {
       return p;
     });
     saveProvidersList(updated);
-    showNotification('⚠️ Proveedor puesto en estado pendiente.');
+    showNotification('Proveedor puesto en estado pendiente.');
   };
 
   // Eliminar Proveedor

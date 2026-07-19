@@ -24,12 +24,12 @@ export const PlantScannerSection = () => {
   const handleAddToMyCollection = () => {
     const user = getActiveUser();
     if (!user) {
-      setToastMsg(`⚠️ Inicia sesión para guardar plantas en tu colección`);
+      setToastMsg(`Inicia sesión para guardar plantas en tu colección`);
       setTimeout(() => setToastMsg(null), 3500);
       return;
     }
     savePlantToUserGarden(user.id, plant);
-    setToastMsg(`🌱 ¡${plant.name} añadida a la base de datos de ${user.name}!`);
+    setToastMsg(`¡${plant.name} añadida a la base de datos de ${user.name}!`);
     setTimeout(() => setToastMsg(null), 3500);
   };
 
@@ -167,14 +167,14 @@ export const PlantScannerSection = () => {
               </div>
             </div>
 
-            {/* PRIMARY PILL CTA BUTTON ("SCAN PLANT ✨") */}
+            {/* PRIMARY PILL CTA BUTTON */}
             <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
               <button
                 onClick={handleRunScan}
                 className="w-full sm:w-auto flex-1 py-3.5 px-6 rounded-full bg-[#2E6C45] text-white font-extrabold text-sm sm:text-base flex items-center justify-center gap-2.5 shadow-md hover:bg-[#255838] transition-all"
               >
                 <SparklesIcon size={18} className="text-[#5CCF8D]" />
-                <span>SCAN PLANT ✨</span>
+                <span>Escanear Planta</span>
               </button>
 
               {/* SECONDARY OUTLINED PILL BUTTON ("ADD TO MY COLLECTION") */}

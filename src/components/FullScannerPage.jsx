@@ -111,7 +111,7 @@ export const FullScannerPage = ({ onScanComplete, onCancel }) => {
     };
 
     const savedRecord = saveScanToHistory(fullReport);
-    setStatusMsg('✅ ¡Análisis botánico finalizado y registrado en tu Historial!');
+    setStatusMsg('Análisis botánico finalizado y registrado en tu Historial.');
 
     setTimeout(() => {
       onScanComplete?.(savedRecord || fullReport);

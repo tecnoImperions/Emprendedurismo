@@ -233,7 +233,7 @@ export const ScannerModal = ({ isOpen, onClose }) => {
   const handleAddToGarden = () => {
     const user = getActiveUser();
     if (!user) {
-      setToastMsg(`⚠️ Inicia sesión para guardar plantas en tu colección`);
+      setToastMsg(`Inicia sesión para guardar plantas en tu colección`);
       setTimeout(() => setToastMsg(null), 3500);
       return;
     }
@@ -241,7 +241,7 @@ export const ScannerModal = ({ isOpen, onClose }) => {
     if (customDiagnosis?.isPlantOrGarden === false) return;
 
     savePlantToUserGarden(user.id, currentObj);
-    setToastMsg(`✅ ¡${currentObj.name} añadida a los cultivos de ${user.name}!`);
+    setToastMsg(`¡${currentObj.name} añadida a los cultivos de ${user.name}!`);
     setTimeout(() => setToastMsg(null), 3500);
   };
 
@@ -424,13 +424,76 @@ export const ScannerModal = ({ isOpen, onClose }) => {
                     {currentSolution}
                   </p>
 
-                  <div className="bg-white p-4 rounded-xl border border-amber-200 space-y-2 text-xs">
-                    <strong className="text-amber-950 block">💡 Tips de Captura para Huertos en Casa:</strong>
-                    <ul className="list-disc pl-4 space-y-1 text-amber-800">
-                      <li>Enfoca directamente el follaje, tallos o maceta de tus hortalizas.</li>
-                      <li>Evita que aparezcan personas u objetos ajenos al jardín en primer plano.</li>
-                      <li>Asegura buena iluminación natural o enciende la luz para ver las hojas.</li>
-                    </ul>
+                  <div className="bg-white p-5 rounded-2xl border border-[#DCE7E0] space-y-4">
+                    <h5 className="text-xs font-extrabold text-[#1D1F1D] flex items-center gap-1.5 border-b border-[#E8EEEA] pb-2 uppercase tracking-wide">
+                      <span>📸 Guía para un Escaneo Perfecto</span>
+                    </h5>
+                    
+                    <div className="grid grid-cols-2 gap-3">
+                      {/* Error: Muy Cerca */}
+                      <div className="rounded-xl border border-red-100 p-2 bg-red-50/20 flex flex-col justify-between">
+                        <div>
+                          <div className="relative rounded-lg overflow-hidden h-16 bg-gray-100 mb-1.5 border border-red-200">
+                            <img src="/images/scan_too_close.png" alt="Muy cerca" className="w-full h-full object-cover" />
+                            <span className="absolute top-1 left-1 bg-red-600 text-white text-[8px] font-extrabold px-1 rounded-md uppercase scale-75 origin-top-left">
+                              Mal
+                            </span>
+                          </div>
+                          <strong className="text-[10px] text-red-950 block font-extrabold">🔍 Muy Cerca</strong>
+                          <p className="text-[9px] text-[#526057] leading-tight mt-0.5">
+                            Evita detalles borrosos y sin contexto.
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Error: Muy Lejos */}
+                      <div className="rounded-xl border border-red-100 p-2 bg-red-50/20 flex flex-col justify-between">
+                        <div>
+                          <div className="relative rounded-lg overflow-hidden h-16 bg-gray-100 mb-1.5 border border-red-200">
+                            <img src="/images/scan_too_far.png" alt="Muy lejos" className="w-full h-full object-cover" />
+                            <span className="absolute top-1 left-1 bg-red-600 text-white text-[8px] font-extrabold px-1 rounded-md uppercase scale-75 origin-top-left">
+                              Mal
+                            </span>
+                          </div>
+                          <strong className="text-[10px] text-red-950 block font-extrabold">🗺️ Muy Lejos</strong>
+                          <p className="text-[9px] text-[#526057] leading-tight mt-0.5">
+                            La planta se pierde en la distancia.
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Error: Varias Especies */}
+                      <div className="rounded-xl border border-red-100 p-2 bg-red-50/20 flex flex-col justify-between">
+                        <div>
+                          <div className="relative rounded-lg overflow-hidden h-16 bg-gray-100 mb-1.5 border border-red-200">
+                            <img src="/images/scan_too_many.png" alt="Varias especies" className="w-full h-full object-cover" />
+                            <span className="absolute top-1 left-1 bg-red-600 text-white text-[8px] font-extrabold px-1 rounded-md uppercase scale-75 origin-top-left">
+                              Mal
+                            </span>
+                          </div>
+                          <strong className="text-[10px] text-red-950 block font-extrabold">🌿 Mezcladas</strong>
+                          <p className="text-[9px] text-[#526057] leading-tight mt-0.5">
+                            Varias plantas juntas confunden a la IA.
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Correcto: Encuadre Perfecto */}
+                      <div className="rounded-xl border border-emerald-100 p-2 bg-emerald-50/20 flex flex-col justify-between">
+                        <div>
+                          <div className="relative rounded-lg overflow-hidden h-16 bg-gray-100 mb-1.5 border border-emerald-200">
+                            <img src="/images/scan_perfect.png" alt="Encuadre perfecto" className="w-full h-full object-cover" />
+                            <span className="absolute top-1 left-1 bg-[#2E6C45] text-white text-[8px] font-extrabold px-1 rounded-md uppercase scale-75 origin-top-left">
+                              Bien
+                            </span>
+                          </div>
+                          <strong className="text-[10px] text-emerald-950 block font-extrabold">✨ Ideal</strong>
+                          <p className="text-[9px] text-[#526057] leading-tight mt-0.5">
+                            Hojas visibles y centradas a 30-50 cm.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
                   </div>
 
                   <label className="cursor-pointer w-full py-3 px-6 rounded-full bg-[#2E6C45] text-white font-extrabold text-xs flex items-center justify-center gap-2 shadow-md hover:bg-[#255838] transition-all block text-center">

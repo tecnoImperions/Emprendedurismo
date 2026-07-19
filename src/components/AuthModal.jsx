@@ -49,7 +49,7 @@ export const AuthModal = ({ isOpen, onClose, onLoginSuccess }) => {
             password
           });
           if (error) throw error;
-          setSuccessMsg('✅ ¡Sesión iniciada correctamente en Supabase!');
+          setSuccessMsg('¡Sesión iniciada correctamente en Supabase!');
           setTimeout(() => {
             onLoginSuccess?.(data.user || { name: email.split('@')[0], email });
             onClose();
@@ -67,7 +67,7 @@ export const AuthModal = ({ isOpen, onClose, onLoginSuccess }) => {
             }
           });
           if (error) throw error;
-          setSuccessMsg('✅ ¡Cuenta creada y sincronizada con la base de datos!');
+          setSuccessMsg('¡Cuenta creada y sincronizada con la base de datos!');
           setTimeout(() => {
             onLoginSuccess?.(data.user || { name: fullName || email.split('@')[0], email });
             onClose();
@@ -86,7 +86,7 @@ export const AuthModal = ({ isOpen, onClose, onLoginSuccess }) => {
           role: 'Principiante en Huertos en Casa'
         };
         saveActiveUser(newUserObj);
-        setSuccessMsg(`✅ ¡Sesión iniciada como ${localName}!`);
+        setSuccessMsg(`¡Sesión iniciada como ${localName}!`);
         setTimeout(() => {
           onLoginSuccess?.(newUserObj);
           onClose();
@@ -248,12 +248,12 @@ export const AuthModal = ({ isOpen, onClose, onLoginSuccess }) => {
             disabled={loading}
             className="w-full mt-2 py-3.5 px-6 rounded-2xl bg-[#2E6C45] hover:bg-[#255838] text-white font-extrabold text-xs sm:text-sm transition-all shadow-md active:scale-95 flex items-center justify-center gap-2"
           >
-            {loading ? 'Procesando...' : tab === 'login' ? 'ENTRAR A MI HUERTO EN SUPABASE 🌿' : 'CREAR CUENTA GRATIS Y SINCRONIZAR 🌱'}
+            {loading ? 'Procesando...' : tab === 'login' ? 'ENTRAR A MI HUERTO EN SUPABASE' : 'CREAR CUENTA GRATIS Y SINCRONIZAR'}
           </button>
         </form>
 
         <div className="mt-6 pt-4 border-t border-[#E4ECE7] text-center text-[11px] text-[#59695F]">
-          🔒 Datos protegidos en la base de datos oficial <strong>Supabase FloraMetrics</strong>.
+          Datos protegidos en la base de datos oficial <strong>Supabase FloraMetrics</strong>.
         </div>
       </div>
     </div>
