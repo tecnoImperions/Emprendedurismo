@@ -101,6 +101,36 @@ function App() {
     }
   }, []);
 
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [isInstallable, setIsInstallable] = useState(false);
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setIsInstallable(true);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      setIsInstallable(false);
+    }
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
+  }, []);
+
+  const handleInstallApp = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    console.log(`PWA install prompt outcome: ${outcome}`);
+    setDeferredPrompt(null);
+    setIsInstallable(false);
+  };
+
   const handleLogout = async () => {
     if (supabase && supabase.auth) {
       await supabase.auth.signOut();
@@ -164,7 +194,6 @@ function App() {
   return (
     <div className="min-h-screen bg-[#F3F8F5] text-[#1D1F1D] font-['Plus_Jakarta_Sans'] selection:bg-[#5CCF8D] selection:text-[#1D1F1D] overflow-x-hidden flex flex-col justify-between">
       <div>
-        {/* Navbar con Dock Bancario y Botón de Cámara QR Central */}
         <Navbar
           activeModule={activeModule}
           onSelectModule={handleSelectModule}
@@ -172,7 +201,39 @@ function App() {
           onOpenAuthModal={() => setIsAuthModalOpen(true)}
           currentUser={currentUser}
           onLogout={handleLogout}
+          isInstallable={isInstallable}
+          onInstallApp={handleInstallApp}
         />
+
+        {/* Banner flotante de instalación PWA */}
+        {isInstallable && (
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4 animate-fadeIn">
+            <div className="p-4 bg-gradient-to-r from-[#2E6C45] to-[#3B8255] border border-[#2E6C45]/20 rounded-3xl text-white shadow-md flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <span className="text-2xl shrink-0">📲</span>
+                <div>
+                  <h4 className="text-sm font-extrabold font-['Plus_Jakarta_Sans']">Descargar FloraMetrics en tu Celular</h4>
+                  <p className="text-[10.5px] text-[#E2EFEB] font-medium leading-tight">Instala FloraMetrics como una App para acceder rápidamente, recibir alertas y usar el escáner IA sin abrir el navegador.</p>
+                </div>
+              </div>
+              <div className="flex gap-2 w-full sm:w-auto shrink-0 justify-end items-center">
+                <button
+                  onClick={() => setIsInstallable(false)}
+                  className="px-4 py-2 rounded-xl text-white/80 hover:bg-white/10 text-xs font-bold transition-all"
+                >
+                  Omitir
+                </button>
+                <button
+                  onClick={handleInstallApp}
+                  className="px-5 py-2 rounded-xl bg-white text-[#2E6C45] font-extrabold text-xs shadow-sm hover:bg-[#F3F8F5] transition-all active:scale-95 flex items-center gap-1.5"
+                >
+                  <span>Instalar App</span>
+                  <span>↓</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* RENDERIZADO DE MÓDULOS EN PÁGINA COMPLETA */}
         <main className="pb-24 lg:pb-12 transition-all">

@@ -8,3 +8,16 @@ createRoot(document.getElementById('root')).render(
     <App />
   </StrictMode>,
 )
+
+// Register PWA Service Worker
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then((reg) => {
+        console.log('FloraMetrics Service Worker registrado con éxito:', reg.scope);
+      })
+      .catch((err) => {
+        console.error('Fallo al registrar Service Worker:', err);
+      });
+  });
+}

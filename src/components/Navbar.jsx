@@ -1,7 +1,7 @@
 import React from 'react';
 import { CameraIcon, SproutIcon, ThermometerIcon, UsersIcon, SparklesIcon, DatabaseIcon, LeafIcon, ClipboardIcon, UserIcon, HomeIcon, CloudIcon } from './Icons';
 
-export const Navbar = ({ activeModule, onSelectModule, onOpenScanner, onOpenAuthModal, currentUser, onLogout }) => {
+export const Navbar = ({ activeModule, onSelectModule, onOpenScanner, onOpenAuthModal, currentUser, onLogout, isInstallable, onInstallApp }) => {
   const isAdmin = currentUser && (
     currentUser.email === 'juanrevollo001@gmail.com' ||
     currentUser.email === 'tecnoimperions@gmail.com' ||
@@ -61,6 +61,17 @@ export const Navbar = ({ activeModule, onSelectModule, onOpenScanner, onOpenAuth
           {/* Acciones de Usuario y Escáner Rápido */}
           <div className="flex items-center gap-2 sm:gap-3">
             
+            {/* BOTÓN INSTALAR APP PWA */}
+            {isInstallable && (
+              <button
+                onClick={onInstallApp}
+                className="hidden md:flex px-4 py-2.5 rounded-2xl bg-[#EBF5EF] hover:bg-[#DCECE2] text-[#2E6C45] font-extrabold text-xs sm:text-sm items-center gap-2 border border-[#CDE5D5] shadow-xs transition-all active:scale-95 animate-pulse"
+                title="Descargar FloraMetrics como App"
+              >
+                <span>📲 Instalar App</span>
+              </button>
+            )}
+
             {/* BOTÓN AMIGABLE DE MI CUENTA */}
             {currentUser ? (
               <div className="flex items-center gap-2.5 bg-[#F3F8F5] border border-[#DCE7E0] pl-2 pr-3 py-1.5 rounded-full shadow-2xs">
