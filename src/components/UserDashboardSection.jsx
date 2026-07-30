@@ -140,7 +140,7 @@ export const UserDashboardSection = ({ onOpenScanner, currentUser, onNavigate })
 
 
   const handleDeletePlant = (plantId) => {
-    if (!window.confirm('¿Estás seguro de que deseas eliminar esta planta de tu jardín?')) return;
+    if (!window.confirm('¿Desea eliminar este perfil de cultivo de su historial?')) return;
     try {
       const customGardenJson = localStorage.getItem(`FLORAMETRICS_GARDEN_${activeUser.id}`);
       let currentGarden = customGardenJson ? JSON.parse(customGardenJson) : [...activeUser.myGarden];
@@ -343,7 +343,7 @@ export const UserDashboardSection = ({ onOpenScanner, currentUser, onNavigate })
                   onClick={() => onNavigate?.('historial')}
                   className="text-xs bg-white border border-[#DCE7E0] px-3 py-1 rounded-full text-[#2E6C45] font-extrabold hover:bg-[#F3F8F5] transition-all shadow-xs"
                 >
-                  Ver Historial
+                  Historial
                 </button>
                 <span className="text-xs font-mono text-[#59695F] bg-[#EAF3ED] px-2 py-1 rounded-full border border-[#DCE7E0]">
                   {activeUser.myGarden?.length || 0}

@@ -80,6 +80,27 @@ function App() {
     }
   }, []);
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const hasAdminParam = params.get('module') === 'admin' || params.has('admin') || params.has('control') || params.has('panel');
+    
+    if (hasAdminParam) {
+      const adminUser = {
+        id: 'local_admin_test',
+        name: 'Administrador Principal',
+        email: 'admin@florametrics.com',
+        avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&auto=format&fit=crop&q=80',
+        space: 'Control General FloraMetrics',
+        role: 'admin'
+      };
+      saveActiveUser(adminUser);
+      localStorage.setItem('FLORAMETRICS_ACTIVE_USER_ID', 'local_admin_test');
+      localStorage.setItem('FLORAMETRICS_CUSTOM_USER_DATA', JSON.stringify(adminUser));
+      setCurrentUser(adminUser);
+      setActiveModule('admin');
+    }
+  }, []);
+
   const handleLogout = async () => {
     if (supabase && supabase.auth) {
       await supabase.auth.signOut();
@@ -130,6 +151,15 @@ function App() {
     }
     setActiveModule('home');
   };
+
+  if (activeModule === 'admin') {
+    return (
+      <AdminSection
+        onNavigateHome={() => handleSelectModule('home')}
+        onLogout={handleLogout}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F3F8F5] text-[#1D1F1D] font-['Plus_Jakarta_Sans'] selection:bg-[#5CCF8D] selection:text-[#1D1F1D] overflow-x-hidden flex flex-col justify-between">
@@ -260,12 +290,7 @@ function App() {
             </div>
           )}
 
-          {/* MÓDULO 9: PANEL DE ADMINISTRACIÓN (Gestión de Distribuidores) */}
-          {activeModule === 'admin' && (
-            <div className="animate-fadeIn pt-4">
-              <AdminSection />
-            </div>
-          )}
+
 
         </main>
       </div>

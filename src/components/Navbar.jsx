@@ -16,9 +16,7 @@ export const Navbar = ({ activeModule, onSelectModule, onOpenScanner, onOpenAuth
     { id: 'comunidad', label: 'Proveedores', icon: <UsersIcon size={17} /> },
   ];
 
-  if (isAdmin) {
-    modules.push({ id: 'admin', label: 'Panel Admin', icon: <UsersIcon size={17} /> });
-  }
+
 
   const firstName = currentUser ? currentUser.name.split(' ')[0] : null;
 
