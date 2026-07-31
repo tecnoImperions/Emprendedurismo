@@ -1,10 +1,10 @@
 const CACHE_NAME = 'florametrics-v1';
 const ASSETS_TO_CACHE = [
-  '/',
-  '/index.html',
-  '/favicon.png',
-  '/favicon.svg',
-  '/icons.svg'
+  './',
+  './index.html',
+  './favicon.png',
+  './favicon.svg',
+  './icons.svg'
 ];
 
 // Install Event
