@@ -46,7 +46,7 @@ const createChainableProxy = (promise) => {
         if (typeof resolvedValue !== 'function') {
           throw new Error(`El miembro accedido no es una función en Supabase.`);
         }
-        return resolvedValue.apply(thisArg, args);
+        return resolvedValue.apply(null, args); // Se invoca con null porque ya fue enlazada con .bind()
       });
       return createChainableProxy(nextPromise);
     },
@@ -57,7 +57,11 @@ const createChainableProxy = (promise) => {
       }
       const nextPromise = promise.then(resolvedValue => {
         if (!resolvedValue) throw new Error('El cliente de Supabase no está disponible.');
-        return resolvedValue[prop];
+        const member = resolvedValue[prop];
+        if (typeof member === 'function') {
+          return member.bind(resolvedValue); // Enlazar el contexto 'this' original del objeto
+        }
+        return member;
       });
       return createChainableProxy(nextPromise);
     }
@@ -101,7 +105,11 @@ export const supabase = new Proxy({}, {
     // Delegar dinámicamente cualquier otra propiedad o método (como from, storage, rpc, etc.)
     const nextPromise = getSupabase().then(client => {
       if (!client) throw new Error('Cliente de Supabase no inicializado.');
-      return client[prop];
+      const member = client[prop];
+      if (typeof member === 'function') {
+        return member.bind(client); // Enlazar el contexto del cliente original
+      }
+      return member;
     });
     return createChainableProxy(nextPromise);
   }
