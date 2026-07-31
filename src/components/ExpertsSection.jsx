@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { expertsCommunity } from '../data/plantData';
 import { UsersIcon, ShieldCheckIcon, CheckCircleIcon, SparklesIcon, LeafIcon } from './Icons';
+import { supabase } from '../lib/supabaseClient';
 
 export const ExpertsSection = ({ currentUser, onOpenAuthModal, onSelectModule }) => {
   const [providers, setProviders] = useState([]);
@@ -180,7 +181,50 @@ export const ExpertsSection = ({ currentUser, onOpenAuthModal, onSelectModule })
   };
 
   useEffect(() => {
-    setProviders(loadProviders());
+    // Cargar de LocalStorage primero para velocidad
+    const localList = loadProviders();
+    setProviders(localList);
+
+    // Sincronizar desde Supabase
+    const fetchFromSupabase = async () => {
+      try {
+        const { data, error } = await supabase.from('experts_directory').select('*');
+        if (error) {
+          console.warn('No se pudo cargar desde Supabase:', error.message);
+          return;
+        }
+        if (data && data.length > 0) {
+          const mapped = data.map(item => ({
+            id: item.id,
+            name: item.name,
+            firstName: item.first_name || '',
+            lastName: item.last_name || '',
+            role: item.role || 'Distribuidor Autorizado',
+            avatar: item.avatar_url || 'https://images.unsplash.com/photo-1545239351-ef35f43d514b?w=200&auto=format&fit=crop&q=80',
+            experience: item.experience || 'Registro verificado',
+            specialty: item.specialty || 'Insumos botánicos',
+            lifespanRecord: item.lifespan_record || 'N/A',
+            quote: item.quote || '',
+            status: item.status || 'Disponible',
+            location: item.location_city || '',
+            addressOrZone: item.address_zone || '',
+            consultationHours: item.consultation_hours || '',
+            contactMode: item.contact_mode || 'WhatsApp',
+            whatsapp: item.whatsapp_number || '',
+            category: item.category || 'npk',
+            selectedPlan: { id: item.selected_plan_id || 'vivero_local' },
+            gpsCoords: item.gps_lat && item.gps_lng ? { lat: Number(item.gps_lat), lng: Number(item.gps_lng) } : null,
+            isApproved: item.is_approved,
+            hasPaid: item.has_paid
+          }));
+          setProviders(mapped);
+          localStorage.setItem('FLORAMETRICS_REGISTERED_PROVIDERS', JSON.stringify(mapped));
+        }
+      } catch (err) {
+        console.error('Error sincronizando con Supabase:', err);
+      }
+    };
+    fetchFromSupabase();
   }, []);
 
   // Función interactiva para obtener la ubicación por el API Geolocation del navegador
@@ -223,6 +267,8 @@ export const ExpertsSection = ({ currentUser, onOpenAuthModal, onSelectModule })
     setSuccessMsg(null);
 
     const activePlan = plans.find(p => p.id === selectedPlanId) || plans[0];
+    const formattedWhatsApp = providerWhatsApp.startsWith('+') ? providerWhatsApp : `+${providerWhatsApp.replace(/\D/g, '')}`;
+
     const newProvider = {
       id: `provider-${Date.now()}`,
       name: providerName,
@@ -235,13 +281,13 @@ export const ExpertsSection = ({ currentUser, onOpenAuthModal, onSelectModule })
       lifespanRecord: 'Pendiente de definir',
       quote: 'Establecimiento registrado en proceso de verificación.',
       status: 'Esperando Validación QR',
-      location: 'Ubicación GPS Registrada',
+      location: providerLocation || 'Ubicación GPS Registrada',
       gpsCoords: gpsCoords.lat ? gpsCoords : null,
       institution: 'Proveedor Oficial FloraMetrics',
-      addressOrZone: 'Dirección física por definir',
-      consultationHours: 'Lunes a Sábado: 08:30 - 18:30',
+      addressOrZone: providerAddress || 'Dirección física por definir',
+      consultationHours: providerHours || 'Lunes a Sábado: 08:30 - 18:30',
       contactMode: 'Contacto Directo por WhatsApp',
-      whatsapp: providerWhatsApp.startsWith('+') ? providerWhatsApp : `+${providerWhatsApp.replace(/\D/g, '')}`,
+      whatsapp: formattedWhatsApp,
       category: 'npk',
       selectedPlan: {
         id: activePlan.id,
@@ -253,12 +299,46 @@ export const ExpertsSection = ({ currentUser, onOpenAuthModal, onSelectModule })
       hasPaid: false
     };
 
+    // Crear objeto para la base de datos de Supabase
+    const dbProvider = {
+      name: providerName,
+      first_name: providerFirstName,
+      last_name: providerLastName,
+      role: 'Distribuidor Autorizado',
+      avatar_url: 'https://images.unsplash.com/photo-1545239351-ef35f43d514b?w=200&auto=format&fit=crop&q=80',
+      experience: `Plan: ${activePlan.name} (${activePlan.price} Bs/mes)`,
+      specialty: 'Insumos por definir',
+      lifespan_record: 'Pendiente de definir',
+      quote: 'Establecimiento registrado en proceso de verificación.',
+      status: 'Esperando Validación QR',
+      location_city: providerLocation || 'Ubicación GPS Registrada',
+      address_zone: providerAddress || 'Dirección física por definir',
+      consultation_hours: providerHours || 'Lunes a Sábado: 08:30 - 18:30',
+      contact_mode: 'Contacto Directo por WhatsApp',
+      whatsapp_number: formattedWhatsApp,
+      category: 'npk',
+      selected_plan_id: activePlan.id,
+      gps_lat: gpsCoords.lat,
+      gps_lng: gpsCoords.lng,
+      is_approved: false,
+      has_paid: false
+    };
+
     try {
       const savedRaw = localStorage.getItem('FLORAMETRICS_REGISTERED_PROVIDERS');
       const savedList = savedRaw ? JSON.parse(savedRaw) : [];
       const updatedList = [newProvider, ...savedList];
       localStorage.setItem('FLORAMETRICS_REGISTERED_PROVIDERS', JSON.stringify(updatedList));
       setProviders([...updatedList, ...expertsCommunity.map(ex => ({ ...ex, whatsapp: '+5215512345678', category: ex.id === 1 || ex.id === 3 ? 'sustratos' : ex.id === 2 ? 'npk' : 'plantas' }))]);
+
+      // Guardar en Supabase
+      supabase.from('experts_directory').insert([dbProvider]).then(({ error }) => {
+        if (error) {
+          console.error('Error al insertar proveedor en Supabase:', error.message);
+        } else {
+          console.log('Proveedor insertado en la base de datos de Supabase.');
+        }
+      });
       
       // Armar mensaje para WhatsApp al número del admin 63488086 (+59163488086)
       const gpsString = gpsCoords.lat && gpsCoords.lng 

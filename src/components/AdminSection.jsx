@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { UserIcon, ClipboardIcon, CheckCircleIcon, UsersIcon, DatabaseIcon, SproutIcon, SparklesIcon } from './Icons';
+import { supabase } from '../lib/supabaseClient';
 
-// SVG Icons matching Bootstrap Icons style
 const DashboardIcon = ({ size = 16, className = "" }) => (
   <svg width={size} height={size} viewBox="0 0 16 16" fill="currentColor" className={className}>
     <path d="M11 2a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1V2zM7.5 5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1V5zm-4.5 4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9z"/>
@@ -161,9 +161,52 @@ export const AdminSection = ({ onNavigateHome, onLogout }) => {
   };
 
   useEffect(() => {
+    // Carga inicial rápida desde localStorage como fallback
     const loaded = loadProviders();
     setProviders(loaded);
     calculateStats(loaded);
+
+    // Carga en tiempo real y sincronización desde Supabase
+    const fetchFromSupabase = async () => {
+      try {
+        const { data, error } = await supabase.from('experts_directory').select('*');
+        if (error) {
+          console.warn('Error al cargar de Supabase:', error.message);
+          return;
+        }
+        if (data && data.length > 0) {
+          const mapped = data.map(item => ({
+            id: item.id,
+            name: item.name,
+            firstName: item.first_name || '',
+            lastName: item.last_name || '',
+            role: item.role || 'Distribuidor Autorizado',
+            avatar: item.avatar_url || 'https://images.unsplash.com/photo-1545239351-ef35f43d514b?w=200&auto=format&fit=crop&q=80',
+            experience: item.experience || 'Registro verificado',
+            specialty: item.specialty || 'Insumos botánicos',
+            lifespanRecord: item.lifespan_record || 'N/A',
+            quote: item.quote || '',
+            status: item.status || 'Disponible',
+            location: item.location_city || '',
+            addressOrZone: item.address_zone || '',
+            consultationHours: item.consultation_hours || '',
+            contactMode: item.contact_mode || 'WhatsApp',
+            whatsapp: item.whatsapp_number || '',
+            category: item.category || 'npk',
+            selectedPlan: { id: item.selected_plan_id || 'vivero_local' },
+            gpsCoords: item.gps_lat && item.gps_lng ? { lat: Number(item.gps_lat), lng: Number(item.gps_lng) } : null,
+            isApproved: item.is_approved,
+            hasPaid: item.has_paid
+          }));
+          setProviders(mapped);
+          calculateStats(mapped);
+          localStorage.setItem('FLORAMETRICS_REGISTERED_PROVIDERS', JSON.stringify(mapped));
+        }
+      } catch (err) {
+        console.error('Error sincronizando con Supabase:', err);
+      }
+    };
+    fetchFromSupabase();
   }, []);
 
   // Guardar lista en LocalStorage
@@ -186,6 +229,15 @@ export const AdminSection = ({ onNavigateHome, onLogout }) => {
       return p;
     });
     saveProvidersList(updated);
+
+    // Sincronizar con Supabase
+    supabase.from('experts_directory')
+      .update({ is_approved: true, status: 'Verificado & Disponible' })
+      .eq('id', id)
+      .then(({ error }) => {
+        if (error) console.error('Error aprobando en Supabase:', error.message);
+      });
+
     showNotification('Proveedor verificado y publicado correctamente.');
   };
 
@@ -198,6 +250,15 @@ export const AdminSection = ({ onNavigateHome, onLogout }) => {
       return p;
     });
     saveProvidersList(updated);
+
+    // Sincronizar con Supabase
+    supabase.from('experts_directory')
+      .update({ is_approved: false, status: 'Pendiente de Aprobación' })
+      .eq('id', id)
+      .then(({ error }) => {
+        if (error) console.error('Error suspendiendo en Supabase:', error.message);
+      });
+
     showNotification('Proveedor puesto en estado suspendido.');
   };
 
@@ -206,6 +267,15 @@ export const AdminSection = ({ onNavigateHome, onLogout }) => {
     if (window.confirm('¿Estás seguro de que deseas eliminar este distribuidor del directorio?')) {
       const updated = providers.filter((p) => p.id !== id);
       saveProvidersList(updated);
+
+      // Sincronizar con Supabase
+      supabase.from('experts_directory')
+        .delete()
+        .eq('id', id)
+        .then(({ error }) => {
+          if (error) console.error('Error eliminando en Supabase:', error.message);
+        });
+
       showNotification('Distribuidor eliminado del sistema.');
     }
   };
@@ -235,6 +305,7 @@ export const AdminSection = ({ onNavigateHome, onLogout }) => {
       distribuidor_agro: { name: 'Plan Agro-Distribuidor', price: 80 }
     };
     const activePlan = plansInfo[editPlanId] || plansInfo['vivero_local'];
+    const formattedWhatsApp = editWhatsApp.startsWith('+') ? editWhatsApp : `+${editWhatsApp.replace(/\D/g, '')}`;
 
     const updated = providers.map((p) => {
       if (p.id === editingProvider.id) {
@@ -243,7 +314,7 @@ export const AdminSection = ({ onNavigateHome, onLogout }) => {
           name: editName,
           firstName: editFirstName,
           lastName: editLastName,
-          whatsapp: editWhatsApp.startsWith('+') ? editWhatsApp : `+${editWhatsApp.replace(/\D/g, '')}`,
+          whatsapp: formattedWhatsApp,
           location: editLocation,
           specialty: editSpecialty,
           addressOrZone: editAddress,
@@ -261,6 +332,30 @@ export const AdminSection = ({ onNavigateHome, onLogout }) => {
       return p;
     });
     saveProvidersList(updated);
+
+    // Sincronizar con Supabase
+    const dbUpdate = {
+      name: editName,
+      first_name: editFirstName,
+      last_name: editLastName,
+      whatsapp_number: formattedWhatsApp,
+      location_city: editLocation,
+      specialty: editSpecialty,
+      address_zone: editAddress,
+      has_paid: editHasPaid,
+      experience: `Plan: ${activePlan.name} (${activePlan.price} Bs/mes)`,
+      selected_plan_id: editPlanId,
+      gps_lat: editGpsLat ? parseFloat(editGpsLat) : null,
+      gps_lng: editGpsLng ? parseFloat(editGpsLng) : null
+    };
+
+    supabase.from('experts_directory')
+      .update(dbUpdate)
+      .eq('id', editingProvider.id)
+      .then(({ error }) => {
+        if (error) console.error('Error editando en Supabase:', error.message);
+      });
+
     setEditingProvider(null);
     showNotification('Cambios guardados con éxito.');
   };

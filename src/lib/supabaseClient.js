@@ -37,37 +37,75 @@ export const getSupabase = async () => {
   return initPromise;
 };
 
-// Export proxy para que App.jsx y AuthModal.jsx accedan a supabase.auth y base de datos sin errores ni bloqueos
-export const supabase = {
-  auth: {
-    getUser: async () => {
-      const client = await getSupabase();
-      return client ? client.auth.getUser() : { data: { user: null } };
-    },
-    onAuthStateChange: (callback) => {
-      getSupabase().then(client => {
-        if (client) client.auth.onAuthStateChange(callback);
+// Función auxiliar para crear un proxy encadenable y awaitable (thenable)
+const createChainableProxy = (promise) => {
+  return new Proxy(() => {}, {
+    // Cuando el proxy es invocado como función (ej: from('tabla') o select('*'))
+    apply(target, thisArg, args) {
+      const nextPromise = promise.then(resolvedValue => {
+        if (typeof resolvedValue !== 'function') {
+          throw new Error(`El miembro accedido no es una función en Supabase.`);
+        }
+        return resolvedValue.apply(thisArg, args);
       });
-      return { data: { subscription: { unsubscribe: () => {} } } };
+      return createChainableProxy(nextPromise);
     },
-    signInWithOAuth: async (options) => {
-      const client = await getSupabase();
-      return client ? client.auth.signInWithOAuth(options) : { error: { message: 'Supabase no disponible en este momento' } };
-    },
-    signInWithPassword: async (options) => {
-      const client = await getSupabase();
-      return client ? client.auth.signInWithPassword(options) : { error: { message: 'Supabase no disponible en este momento' } };
-    },
-    signUp: async (options) => {
-      const client = await getSupabase();
-      return client ? client.auth.signUp(options) : { error: { message: 'Supabase no disponible en este momento' } };
-    },
-    signOut: async () => {
-      const client = await getSupabase();
-      return client ? client.auth.signOut() : null;
+    // Cuando se accede a una propiedad del proxy (ej: supabase.from o query.then)
+    get(target, prop) {
+      if (prop === 'then') {
+        return (onFulfilled, onRejected) => promise.then(onFulfilled, onRejected);
+      }
+      const nextPromise = promise.then(resolvedValue => {
+        if (!resolvedValue) throw new Error('El cliente de Supabase no está disponible.');
+        return resolvedValue[prop];
+      });
+      return createChainableProxy(nextPromise);
     }
-  }
+  });
 };
+
+// Export proxy dinámico para que cualquier archivo pueda usar supabase.from(), supabase.storage, etc. sin bloqueos de carga
+export const supabase = new Proxy({}, {
+  get(target, prop) {
+    if (prop === 'auth') {
+      return {
+        getUser: async () => {
+          const client = await getSupabase();
+          return client ? client.auth.getUser() : { data: { user: null } };
+        },
+        onAuthStateChange: (callback) => {
+          getSupabase().then(client => {
+            if (client) client.auth.onAuthStateChange(callback);
+          });
+          return { data: { subscription: { unsubscribe: () => {} } } };
+        },
+        signInWithOAuth: async (options) => {
+          const client = await getSupabase();
+          return client ? client.auth.signInWithOAuth(options) : { error: { message: 'Supabase no disponible' } };
+        },
+        signInWithPassword: async (options) => {
+          const client = await getSupabase();
+          return client ? client.auth.signInWithPassword(options) : { error: { message: 'Supabase no disponible' } };
+        },
+        signUp: async (options) => {
+          const client = await getSupabase();
+          return client ? client.auth.signUp(options) : { error: { message: 'Supabase no disponible' } };
+        },
+        signOut: async () => {
+          const client = await getSupabase();
+          return client ? client.auth.signOut() : null;
+        }
+      };
+    }
+    
+    // Delegar dinámicamente cualquier otra propiedad o método (como from, storage, rpc, etc.)
+    const nextPromise = getSupabase().then(client => {
+      if (!client) throw new Error('Cliente de Supabase no inicializado.');
+      return client[prop];
+    });
+    return createChainableProxy(nextPromise);
+  }
+});
 
 // Helper para iniciar sesión con Google OAuth directo al botón "Continuar con Google" en la base de datos real
 export const signInWithGoogle = async () => {
